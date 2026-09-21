@@ -155,8 +155,17 @@ async function logoutUser() {
 }
 
 async function getCurrentUser() {
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  return user;
+  try {
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) {
+      console.error("OZZI Session Error:", error);
+      return null;
+    }
+    return data?.session?.user || null;
+  } catch (error) {
+    console.error("OZZI Session Error:", error);
+    return null;
+  }
 }
 
 async function getCurrentProfile() {
@@ -213,17 +222,19 @@ async function updateHeaderAuth() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const registerForm = document.getElementById("registerForm");
   const loginForm = document.getElementById("loginForm");
 
   if (registerForm) registerForm.addEventListener("submit", registerUser);
   if (loginForm) loginForm.addEventListener("submit", loginUser);
 
-  updateHeaderAuth();
+  // Always read the real Supabase session when the page opens.
+  await updateHeaderAuth();
 });
 
 supabaseClient.auth.onAuthStateChange((event) => {
   console.log("OZZI Auth:", event);
-  if (event === "SIGNED_OUT") updateHeaderAuth();
+  // Keep the header synchronized for login, logout, refresh and initial session.
+  setTimeout(() => updateHeaderAuth(), 0);
 });
