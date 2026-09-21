@@ -210,15 +210,15 @@ async function updateHeaderAuth() {
   const logoutButton = document.querySelector('[data-auth="logout"]');
 
   if (user) {
-    if (loginLink) loginLink.style.display = "none";
-    if (registerLink) registerLink.style.display = "none";
-    if (accountLink) accountLink.style.display = "inline-flex";
-    if (logoutButton) logoutButton.style.display = "inline-flex";
+    if (loginLink) loginLink.style.setProperty("display", "none", "important");
+    if (registerLink) registerLink.style.setProperty("display", "none", "important");
+    if (accountLink) accountLink.style.setProperty("display", "inline-flex", "important");
+    if (logoutButton) logoutButton.style.setProperty("display", "inline-flex", "important");
   } else {
-    if (loginLink) loginLink.style.display = "inline-flex";
-    if (registerLink) registerLink.style.display = "inline-flex";
-    if (accountLink) accountLink.style.display = "none";
-    if (logoutButton) logoutButton.style.display = "none";
+    if (loginLink) loginLink.style.setProperty("display", "inline-flex", "important");
+    if (registerLink) registerLink.style.setProperty("display", "inline-flex", "important");
+    if (accountLink) accountLink.style.setProperty("display", "none", "important");
+    if (logoutButton) logoutButton.style.setProperty("display", "none", "important");
   }
 }
 
