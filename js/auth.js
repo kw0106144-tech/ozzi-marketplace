@@ -1,83 +1,66 @@
-/* =========================================
-   OZZI - Authentication
-   Supabase Auth + public.users
-========================================= */
+/* OZZI Authentication - fixed field IDs */
 
 const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
 );
 
-/* ---------- Helpers ---------- */
-
-function showMessage(message, type = "error") {
-  const box = document.getElementById("message");
-
+function showMessage(message, type = "error", elementId = "registerMessage") {
+  const box = document.getElementById(elementId);
   if (!box) {
     alert(message);
     return;
   }
-
   box.textContent = message;
-  box.className = `message ${type}`;
+  box.className = `auth-message ${type}`;
   box.style.display = "block";
 }
 
 function setLoading(button, loading, normalText) {
   if (!button) return;
-
   button.disabled = loading;
   button.textContent = loading ? "جاري التنفيذ..." : normalText;
 }
 
-/* ---------- Register ---------- */
-
 async function registerUser(event) {
   event.preventDefault();
 
-  const form = event.target;
-  const button = form.querySelector('button[type="submit"]');
-
-  const name = document.getElementById("name")?.value.trim();
-  const phone = document.getElementById("phone")?.value.trim();
-  const countryCode = document.getElementById("country")?.value;
-  const email = document.getElementById("email")?.value.trim().toLowerCase();
-  const password = document.getElementById("password")?.value;
-  const confirmPassword =
-    document.getElementById("confirmPassword")?.value;
+  const button = document.getElementById("registerButton");
+  const name = document.getElementById("registerName")?.value.trim();
+  const phone = document.getElementById("registerPhone")?.value.trim();
+  const countryCode = document.getElementById("registerCountry")?.value;
+  const email = document.getElementById("registerEmail")?.value.trim().toLowerCase();
+  const password = document.getElementById("registerPassword")?.value;
+  const confirmPassword = document.getElementById("registerPasswordConfirm")?.value;
 
   if (!name || !phone || !countryCode || !email || !password || !confirmPassword) {
-    showMessage("من فضلك أكمل جميع البيانات.");
+    showMessage("من فضلك أكمل جميع البيانات.", "error", "registerMessage");
     return;
   }
 
-  if (password.length < 6) {
-    showMessage("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
+  if (password.length < 8) {
+    showMessage("كلمة المرور يجب أن تكون 8 أحرف على الأقل.", "error", "registerMessage");
     return;
   }
 
   if (password !== confirmPassword) {
-    showMessage("كلمتا المرور غير متطابقتين.");
+    showMessage("كلمتا المرور غير متطابقتين.", "error", "registerMessage");
     return;
   }
 
-  setLoading(button, true, "إنشاء حساب");
+  setLoading(button, true, "إنشاء الحساب");
 
   try {
-    /* Get selected country */
-    const { data: country, error: countryError } =
-      await supabaseClient
-        .from("countries")
-        .select("id, code, name_ar, name_en, currency_code, currency_symbol")
-        .eq("code", countryCode)
-        .single();
+    const { data: country, error: countryError } = await supabaseClient
+      .from("countries")
+      .select("id, code, name_ar, name_en, currency_code, currency_symbol")
+      .eq("code", countryCode)
+      .single();
 
     if (countryError || !country) {
       throw new Error("الدولة المختارة غير موجودة.");
     }
 
-    /* Create Supabase Auth user.
-       The trigger saves this metadata into public.users. */
     const { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
@@ -90,15 +73,10 @@ async function registerUser(event) {
       }
     });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
+    if (!data.user) throw new Error("تعذر إنشاء الحساب. حاول مرة أخرى.");
 
-    if (!data.user) {
-      throw new Error("تعذر إنشاء الحساب. حاول مرة أخرى.");
-    }
-
-    showMessage("تم إنشاء حسابك بنجاح. جاري تحويلك...", "success");
+    showMessage("تم إنشاء حسابك بنجاح. جاري تحويلك...", "success", "registerMessage");
 
     setTimeout(() => {
       window.location.href = "index.html";
@@ -114,50 +92,39 @@ async function registerUser(event) {
     }
 
     if (message.toLowerCase().includes("password")) {
-      message = "كلمة المرور غير صالحة. استخدم 6 أحرف على الأقل.";
+      message = "كلمة المرور غير صالحة. استخدم 8 أحرف على الأقل.";
     }
 
-    showMessage(message);
-
+    showMessage(message, "error", "registerMessage");
   } finally {
-    setLoading(button, false, "إنشاء حساب");
+    setLoading(button, false, "إنشاء الحساب");
   }
 }
-
-/* ---------- Login ---------- */
 
 async function loginUser(event) {
   event.preventDefault();
 
-  const form = event.target;
-  const button = form.querySelector('button[type="submit"]');
-
-  const email = document.getElementById("email")?.value.trim().toLowerCase();
-  const password = document.getElementById("password")?.value;
+  const button = document.getElementById("loginButton");
+  const email = document.getElementById("loginEmail")?.value.trim().toLowerCase();
+  const password = document.getElementById("loginPassword")?.value;
 
   if (!email || !password) {
-    showMessage("أدخل البريد الإلكتروني وكلمة المرور.");
+    showMessage("أدخل البريد الإلكتروني وكلمة المرور.", "error", "loginMessage");
     return;
   }
 
   setLoading(button, true, "تسجيل الدخول");
 
   try {
-    const { data, error } =
-      await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
+    if (!data.user) throw new Error("تعذر تسجيل الدخول.");
 
-    if (!data.user) {
-      throw new Error("تعذر تسجيل الدخول.");
-    }
-
-    showMessage("تم تسجيل الدخول بنجاح.", "success");
+    showMessage("تم تسجيل الدخول بنجاح. جاري التحويل...", "success", "loginMessage");
 
     setTimeout(() => {
       window.location.href = "index.html";
@@ -172,44 +139,29 @@ async function loginUser(event) {
       message = "يجب تأكيد البريد الإلكتروني أولًا.";
     }
 
-    showMessage(message);
-
+    showMessage(message, "error", "loginMessage");
   } finally {
     setLoading(button, false, "تسجيل الدخول");
   }
 }
 
-/* ---------- Logout ---------- */
-
 async function logoutUser() {
   const { error } = await supabaseClient.auth.signOut();
-
   if (error) {
     console.error("OZZI Logout Error:", error);
     return;
   }
-
   window.location.href = "index.html";
 }
 
-/* ---------- Current User ---------- */
-
 async function getCurrentUser() {
-  const {
-    data: { user }
-  } = await supabaseClient.auth.getUser();
-
+  const { data: { user } } = await supabaseClient.auth.getUser();
   return user;
 }
 
-/* ---------- Current Public Profile ---------- */
-
 async function getCurrentProfile() {
   const user = await getCurrentUser();
-
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const { data, error } = await supabaseClient
     .from("users")
@@ -240,8 +192,6 @@ async function getCurrentProfile() {
   return data;
 }
 
-/* ---------- Header State ---------- */
-
 async function updateHeaderAuth() {
   const user = await getCurrentUser();
 
@@ -263,29 +213,17 @@ async function updateHeaderAuth() {
   }
 }
 
-/* ---------- Form Events ---------- */
-
 document.addEventListener("DOMContentLoaded", () => {
   const registerForm = document.getElementById("registerForm");
   const loginForm = document.getElementById("loginForm");
 
-  if (registerForm) {
-    registerForm.addEventListener("submit", registerUser);
-  }
-
-  if (loginForm) {
-    loginForm.addEventListener("submit", loginUser);
-  }
+  if (registerForm) registerForm.addEventListener("submit", registerUser);
+  if (loginForm) loginForm.addEventListener("submit", loginUser);
 
   updateHeaderAuth();
 });
 
-/* ---------- Auth State ---------- */
-
-supabaseClient.auth.onAuthStateChange((event, session) => {
+supabaseClient.auth.onAuthStateChange((event) => {
   console.log("OZZI Auth:", event);
-
-  if (event === "SIGNED_OUT") {
-    updateHeaderAuth();
-  }
+  if (event === "SIGNED_OUT") updateHeaderAuth();
 });
