@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#071923">
-  <meta name="description" content="OZZI - More than store | متجر إلكتروني لكل العيله وكل احتياجاتك">
+  <meta name="description" content="OZZI - More than store | متجر إلكتروني متعدد البائعين">
   <title>OZZI | More than store</title>
 
   <style>
@@ -599,12 +599,12 @@
         <a class="btn btn-outline" href="login.html" data-auth="login">تسجيل الدخول</a>
         <a class="btn btn-primary" href="register.html" data-auth="register">إنشاء حساب</a>
 
-        <a class="btn btn-primary profile-btn" href="profile.html" data-auth="account" style="display: none !important;" aria-label="الملف الشخصي">
+        <a class="btn btn-primary profile-btn" href="profile.html" data-auth="account" style="display: none;" aria-label="الملف الشخصي">
           <span class="profile-icon" aria-hidden="true">👤</span>
           <span>الملف الشخصي</span>
         </a>
 
-        <button class="btn btn-outline" type="button" data-auth="logout" style="display: none !important;" onclick="logoutUser()">
+        <button class="btn btn-outline" type="button" data-auth="logout" style="display: none;" onclick="logoutUser()">
           تسجيل الخروج
         </button>
       </div>
@@ -813,7 +813,7 @@
 
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="auth(1).js"></script>
+  <script src="auth.js"></script>
 
   <script>
     const countrySelect = document.getElementById("countrySelect");
@@ -865,5 +865,34 @@
     }
   </script>
 
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  const applyAuthUI = async () => {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const loggedIn = !!session;
+
+      document.querySelectorAll('[data-auth="login"], [data-auth="register"]').forEach(el => {
+        el.style.setProperty("display", loggedIn ? "none" : "inline-flex", "important");
+      });
+
+      document.querySelectorAll('[data-auth="account"], [data-auth="logout"]').forEach(el => {
+        el.style.setProperty("display", loggedIn ? "inline-flex" : "none", "important");
+      });
+    } catch (e) {
+      console.error("OZZI header auth error:", e);
+    }
+  };
+
+  await applyAuthUI();
+
+  if (window.supabaseClient) {
+    supabaseClient.auth.onAuthStateChange(() => {
+      applyAuthUI();
+    });
+  }
+});
+</script>
 </body>
 </html>
