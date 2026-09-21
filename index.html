@@ -1,12 +1,824 @@
-ozzi-marketplace/
-│
-├── index.html
-├── login.html
-├── register.html
-├── css/
-│   └── style.css
-│
-└── js/
-    ├── config.js
-    ├── auth.js
-    └── app.js
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>OZZI | More than store</title>
+
+    <meta
+        name="description"
+        content="OZZI - متجر إلكتروني متعدد البائعين"
+    >
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+        defer>
+    </script>
+
+    <script src="js/config.js" defer></script>
+    <script src="js/auth.js" defer></script>
+
+    <style>
+
+        /* ==============================
+           OZZI HOME
+        ============================== */
+
+        .home-page {
+            min-height: 100vh;
+            background: #f6f6f6;
+        }
+
+        /* HEADER */
+
+        .site-header {
+            background: #111;
+            color: #fff;
+            padding: 18px 5%;
+        }
+
+        .header-inner {
+            max-width: 1250px;
+            margin: auto;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .logo {
+            color: #fff;
+            text-decoration: none;
+
+            font-size: 30px;
+            font-weight: 900;
+            letter-spacing: 3px;
+        }
+
+        .logo span {
+            display: block;
+
+            font-size: 10px;
+            font-weight: 400;
+
+            letter-spacing: 2px;
+
+            text-align: center;
+
+            margin-top: 2px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-btn {
+            color: #111;
+            background: #fff;
+
+            border: none;
+            border-radius: 8px;
+
+            padding: 10px 16px;
+
+            text-decoration: none;
+
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .header-btn.dark {
+            background: #222;
+            color: #fff;
+
+            border: 1px solid #444;
+        }
+
+        /* HERO */
+
+        .hero {
+            max-width: 1250px;
+            margin: 30px auto 0;
+
+            padding: 70px 40px;
+
+            border-radius: 24px;
+
+            background: #111;
+            color: #fff;
+
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 650px;
+        }
+
+        .hero-badge {
+            display: inline-block;
+
+            background: #fff;
+            color: #111;
+
+            padding: 8px 14px;
+
+            border-radius: 30px;
+
+            font-size: 13px;
+            font-weight: 700;
+
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: clamp(38px, 6vw, 72px);
+
+            line-height: 1.05;
+
+            margin-bottom: 20px;
+        }
+
+        .hero h1 span {
+            color: #bdbdbd;
+        }
+
+        .hero p {
+            color: #d5d5d5;
+
+            font-size: 18px;
+
+            line-height: 1.8;
+
+            margin-bottom: 30px;
+        }
+
+        .hero-btn {
+            display: inline-block;
+
+            background: #fff;
+            color: #111;
+
+            padding: 14px 25px;
+
+            border-radius: 10px;
+
+            text-decoration: none;
+
+            font-weight: 800;
+        }
+
+        /* COUNTRY */
+
+        .country-section {
+            max-width: 1250px;
+            margin: 30px auto 0;
+
+            padding: 0 20px;
+        }
+
+        .country-box {
+            background: #fff;
+
+            border: 1px solid #e5e5e5;
+
+            border-radius: 16px;
+
+            padding: 20px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 20px;
+        }
+
+        .country-info h3 {
+            margin-bottom: 5px;
+        }
+
+        .country-info p {
+            color: #777;
+            font-size: 13px;
+        }
+
+        .country-select {
+            min-width: 220px;
+
+            height: 45px;
+
+            border: 1px solid #ddd;
+
+            border-radius: 8px;
+
+            padding: 0 12px;
+
+            font-size: 14px;
+        }
+
+        /* CATEGORIES */
+
+        .section {
+            max-width: 1250px;
+
+            margin: 45px auto 0;
+
+            padding: 0 20px;
+        }
+
+        .section-title {
+            display: flex;
+
+            align-items: center;
+            justify-content: space-between;
+
+            margin-bottom: 20px;
+        }
+
+        .section-title h2 {
+            font-size: 28px;
+        }
+
+        .section-title span {
+            color: #777;
+            font-size: 14px;
+        }
+
+        .categories {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 15px;
+        }
+
+        .category {
+            background: #fff;
+
+            border: 1px solid #e5e5e5;
+
+            border-radius: 15px;
+
+            padding: 25px 15px;
+
+            text-align: center;
+
+            font-size: 18px;
+
+            font-weight: 700;
+
+            transition: 0.2s;
+        }
+
+        .category:hover {
+            transform: translateY(-3px);
+
+            box-shadow:
+                0 10px 30px rgba(0,0,0,.07);
+        }
+
+        .category-icon {
+            font-size: 34px;
+
+            margin-bottom: 10px;
+        }
+
+        /* PRODUCTS */
+
+        .products {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 18px;
+        }
+
+        .product {
+            background: #fff;
+
+            border: 1px solid #e5e5e5;
+
+            border-radius: 15px;
+
+            overflow: hidden;
+        }
+
+        .product-image {
+            height: 190px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #eeeeee,
+                    #d8d8d8
+                );
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            font-size: 50px;
+        }
+
+        .product-info {
+            padding: 18px;
+        }
+
+        .product-info h3 {
+            font-size: 16px;
+
+            margin-bottom: 8px;
+        }
+
+        .product-info p {
+            color: #777;
+
+            font-size: 13px;
+
+            margin-bottom: 12px;
+        }
+
+        .price {
+            font-size: 19px;
+
+            font-weight: 900;
+        }
+
+        /* FOOTER */
+
+        .site-footer {
+            margin-top: 70px;
+
+            background: #111;
+
+            color: #fff;
+
+            padding: 40px 20px;
+
+            text-align: center;
+        }
+
+        .site-footer h2 {
+            letter-spacing: 3px;
+
+            margin-bottom: 8px;
+        }
+
+        .site-footer p {
+            color: #aaa;
+
+            font-size: 13px;
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 800px) {
+
+            .header-inner {
+                flex-direction: column;
+            }
+
+            .hero {
+                margin: 15px;
+
+                padding: 45px 25px;
+            }
+
+            .country-box {
+                flex-direction: column;
+
+                align-items: stretch;
+            }
+
+            .country-select {
+                width: 100%;
+            }
+
+            .categories {
+                grid-template-columns:
+                    repeat(2, 1fr);
+            }
+
+            .products {
+                grid-template-columns:
+                    repeat(2, 1fr);
+            }
+
+        }
+
+        @media (max-width: 500px) {
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .header-btn {
+                flex: 1;
+
+                text-align: center;
+            }
+
+            .hero h1 {
+                font-size: 40px;
+            }
+
+            .products {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="home-page">
+
+
+    <!-- HEADER -->
+
+    <header class="site-header">
+
+        <div class="header-inner">
+
+            <a
+                href="index.html"
+                class="logo"
+            >
+                OZZI
+                <span>MORE THAN STORE</span>
+            </a>
+
+
+            <div class="header-actions">
+
+                <a
+                    href="login.html"
+                    class="header-btn dark"
+                >
+                    تسجيل الدخول
+                </a>
+
+                <a
+                    href="register.html"
+                    class="header-btn"
+                >
+                    إنشاء حساب
+                </a>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+        <div class="hero-content">
+
+            <div class="hero-badge">
+                OZZI Marketplace
+            </div>
+
+            <h1>
+                كل ما تحتاجه
+                <span>في مكان واحد.</span>
+            </h1>
+
+            <p>
+                اكتشف منتجات متنوعة من البائعين المحليين
+                في بلدك، وتسوق بسهولة مع OZZI.
+            </p>
+
+            <a
+                href="#products"
+                class="hero-btn"
+            >
+                ابدأ التسوق
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <!-- COUNTRY -->
+
+    <section class="country-section">
+
+        <div class="country-box">
+
+            <div class="country-info">
+
+                <h3>
+                    اختر دولتك
+                </h3>
+
+                <p>
+                    الأسعار والمنتجات تظهر حسب بلدك.
+                </p>
+
+            </div>
+
+
+            <select
+                class="country-select"
+                id="countrySelect"
+            >
+
+                <option value="EG">
+                    🇪🇬 مصر — EGP
+                </option>
+
+                <option value="SA">
+                    🇸🇦 السعودية — SAR
+                </option>
+
+                <option value="AE">
+                    🇦🇪 الإمارات — AED
+                </option>
+
+                <option value="IQ">
+                    🇮🇶 العراق — IQD
+                </option>
+
+                <option value="OM">
+                    🇴🇲 عُمان — OMR
+                </option>
+
+            </select>
+
+        </div>
+
+    </section>
+
+
+    <!-- CATEGORIES -->
+
+    <section class="section">
+
+        <div class="section-title">
+
+            <h2>
+                الأقسام
+            </h2>
+
+            <span>
+                اكتشف منتجاتنا
+            </span>
+
+        </div>
+
+
+        <div class="categories">
+
+            <div class="category">
+                <div class="category-icon">📱</div>
+                إلكترونيات
+            </div>
+
+            <div class="category">
+                <div class="category-icon">👕</div>
+                أزياء
+            </div>
+
+            <div class="category">
+                <div class="category-icon">👟</div>
+                أحذية
+            </div>
+
+            <div class="category">
+                <div class="category-icon">🏠</div>
+                المنزل
+            </div>
+
+            <div class="category">
+                <div class="category-icon">💄</div>
+                جمال
+            </div>
+
+            <div class="category">
+                <div class="category-icon">🎮</div>
+                ألعاب
+            </div>
+
+            <div class="category">
+                <div class="category-icon">⌚</div>
+                إكسسوارات
+            </div>
+
+            <div class="category">
+                <div class="category-icon">🚗</div>
+                سيارات
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- PRODUCTS -->
+
+    <section
+        class="section"
+        id="products"
+    >
+
+        <div class="section-title">
+
+            <h2>
+                منتجات مميزة
+            </h2>
+
+            <span>
+                قريبًا المزيد من المنتجات
+            </span>
+
+        </div>
+
+
+        <div class="products">
+
+
+            <article class="product">
+
+                <div class="product-image">
+                    📱
+                </div>
+
+                <div class="product-info">
+
+                    <h3>
+                        هاتف ذكي
+                    </h3>
+
+                    <p>
+                        إلكترونيات
+                    </p>
+
+                    <div class="price">
+                        15,000 ج.م
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <article class="product">
+
+                <div class="product-image">
+                    👟
+                </div>
+
+                <div class="product-info">
+
+                    <h3>
+                        حذاء رياضي
+                    </h3>
+
+                    <p>
+                        أحذية
+                    </p>
+
+                    <div class="price">
+                        1,500 ج.م
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <article class="product">
+
+                <div class="product-image">
+                    🎧
+                </div>
+
+                <div class="product-info">
+
+                    <h3>
+                        سماعات لاسلكية
+                    </h3>
+
+                    <p>
+                        إلكترونيات
+                    </p>
+
+                    <div class="price">
+                        950 ج.م
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <article class="product">
+
+                <div class="product-image">
+                    ⌚
+                </div>
+
+                <div class="product-info">
+
+                    <h3>
+                        ساعة ذكية
+                    </h3>
+
+                    <p>
+                        إكسسوارات
+                    </p>
+
+                    <div class="price">
+                        2,200 ج.م
+                    </div>
+
+                </div>
+
+            </article>
+
+
+        </div>
+
+    </section>
+
+
+    <!-- FOOTER -->
+
+    <footer class="site-footer">
+
+        <h2>
+            OZZI
+        </h2>
+
+        <p>
+            More than store
+        </p>
+
+        <p style="margin-top:10px;">
+            © 2026 OZZI Marketplace
+        </p>
+
+    </footer>
+
+
+</div>
+
+
+<script>
+
+    const countrySelect =
+        document.getElementById("countrySelect");
+
+
+    countrySelect.addEventListener(
+        "change",
+        function () {
+
+            localStorage.setItem(
+                "ozzi_country",
+                this.value
+            );
+
+        }
+    );
+
+
+    const savedCountry =
+        localStorage.getItem(
+            "ozzi_country"
+        );
+
+
+    if (savedCountry) {
+
+        countrySelect.value =
+            savedCountry;
+
+    }
+
+</script>
+
+
+</body>
+
+</html>
