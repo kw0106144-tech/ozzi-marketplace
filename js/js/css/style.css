@@ -1,0 +1,339 @@
+/* =========================================
+   OZZI AUTH
+========================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --ozzi-black: #111111;
+    --ozzi-dark: #1c1c1c;
+    --ozzi-gray: #6b6b6b;
+    --ozzi-light: #f6f6f6;
+    --ozzi-border: #e5e5e5;
+    --ozzi-white: #ffffff;
+    --ozzi-success: #16803c;
+    --ozzi-error: #c62828;
+}
+
+body {
+    font-family:
+        Arial,
+        "Segoe UI",
+        Tahoma,
+        sans-serif;
+
+    background: var(--ozzi-light);
+
+    color: var(--ozzi-black);
+
+    min-height: 100vh;
+}
+
+
+/* =========================================
+   AUTH PAGE
+========================================= */
+
+.auth-page {
+    min-height: 100vh;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 30px 16px;
+}
+
+
+/* =========================================
+   AUTH CARD
+========================================= */
+
+.auth-card {
+    width: 100%;
+
+    max-width: 470px;
+
+    background: var(--ozzi-white);
+
+    border: 1px solid var(--ozzi-border);
+
+    border-radius: 20px;
+
+    padding: 38px;
+
+    box-shadow:
+        0 15px 50px rgba(0, 0, 0, 0.08);
+}
+
+
+/* =========================================
+   LOGO
+========================================= */
+
+.auth-logo {
+    text-align: center;
+
+    font-size: 38px;
+
+    font-weight: 900;
+
+    letter-spacing: 3px;
+
+    color: var(--ozzi-black);
+}
+
+
+.auth-slogan {
+    text-align: center;
+
+    color: var(--ozzi-gray);
+
+    font-size: 13px;
+
+    margin-top: 4px;
+
+    margin-bottom: 30px;
+}
+
+
+/* =========================================
+   TITLES
+========================================= */
+
+.auth-card h1 {
+    text-align: center;
+
+    font-size: 28px;
+
+    margin-bottom: 8px;
+}
+
+
+.auth-description {
+    text-align: center;
+
+    color: var(--ozzi-gray);
+
+    font-size: 14px;
+
+    margin-bottom: 28px;
+}
+
+
+/* =========================================
+   FORM
+========================================= */
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+
+.form-group label {
+    display: block;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    margin-bottom: 8px;
+}
+
+
+.form-group input,
+.form-group select {
+    width: 100%;
+
+    height: 48px;
+
+    border: 1px solid var(--ozzi-border);
+
+    border-radius: 10px;
+
+    padding: 0 14px;
+
+    font-size: 15px;
+
+    outline: none;
+
+    background: #fff;
+
+    transition: 0.2s;
+}
+
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--ozzi-black);
+
+    box-shadow:
+        0 0 0 3px rgba(0, 0, 0, 0.06);
+}
+
+
+.form-group input::placeholder {
+    color: #aaa;
+}
+
+
+/* =========================================
+   BUTTON
+========================================= */
+
+.auth-button {
+    width: 100%;
+
+    height: 50px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: var(--ozzi-black);
+
+    color: white;
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+
+    margin-top: 8px;
+}
+
+
+.auth-button:hover {
+    background: var(--ozzi-dark);
+
+    transform: translateY(-1px);
+}
+
+
+.auth-button:disabled {
+    opacity: 0.65;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+/* =========================================
+   MESSAGE
+========================================= */
+
+.auth-message {
+    min-height: 22px;
+
+    text-align: center;
+
+    font-size: 14px;
+
+    margin-top: 15px;
+
+    line-height: 1.6;
+}
+
+
+.auth-message.success {
+    color: var(--ozzi-success);
+}
+
+
+.auth-message.error {
+    color: var(--ozzi-error);
+}
+
+
+/* =========================================
+   FOOTER
+========================================= */
+
+.auth-footer {
+    display: flex;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    margin-top: 25px;
+
+    font-size: 14px;
+
+    color: var(--ozzi-gray);
+}
+
+
+.auth-footer a {
+    color: var(--ozzi-black);
+
+    font-weight: 700;
+
+    text-decoration: none;
+}
+
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================================
+   BACK HOME
+========================================= */
+
+.back-home {
+    display: block;
+
+    text-align: center;
+
+    margin-top: 20px;
+
+    color: var(--ozzi-gray);
+
+    font-size: 13px;
+
+    text-decoration: none;
+}
+
+
+.back-home:hover {
+    color: var(--ozzi-black);
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+    .auth-page {
+        padding: 18px 12px;
+    }
+
+    .auth-card {
+        padding: 28px 20px;
+
+        border-radius: 16px;
+    }
+
+    .auth-logo {
+        font-size: 32px;
+    }
+
+    .auth-card h1 {
+        font-size: 24px;
+    }
+
+}
