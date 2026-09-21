@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#071923">
-  <meta name="description" content="OZZI - More than store | متجر إلكتروني متعدد البائعين">
+  <meta name="description" content="OZZI - More than store | متجر إلكتروني لكل العيله وكل احتياجاتك">
   <title>OZZI | More than store</title>
 
   <style>
@@ -514,6 +514,16 @@
       opacity: 1;
     }
 
+    /* Auth state */
+    .profile-btn {
+      white-space: nowrap;
+    }
+
+    .profile-icon {
+      font-size: 17px;
+      line-height: 1;
+    }
+
     /* Responsive */
     @media (max-width: 950px) {
       .hero-inner {
@@ -586,8 +596,17 @@
       </a>
 
       <div class="nav-actions">
-        <a class="btn btn-outline" href="login.html">تسجيل الدخول</a>
-        <a class="btn btn-primary" href="register.html">إنشاء حساب</a>
+        <a class="btn btn-outline" href="login.html" data-auth="login">تسجيل الدخول</a>
+        <a class="btn btn-primary" href="register.html" data-auth="register">إنشاء حساب</a>
+
+        <a class="btn btn-primary profile-btn" href="profile.html" data-auth="account" style="display:none;" aria-label="الملف الشخصي">
+          <span class="profile-icon" aria-hidden="true">👤</span>
+          <span>الملف الشخصي</span>
+        </a>
+
+        <button class="btn btn-outline" type="button" data-auth="logout" style="display:none;" onclick="logoutUser()">
+          تسجيل الخروج
+        </button>
       </div>
 
     </div>
@@ -791,6 +810,10 @@
   </footer>
 
   <div id="toast" class="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth(1).js"></script>
 
   <script>
     const countrySelect = document.getElementById("countrySelect");
