@@ -1,119 +1,24 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>تسجيل الدخول | OZZI</title>
-
-    <link rel="stylesheet" href="css/style.css">
-
-    <script
-        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-        defer>
-    </script>
-
-    <script src="js/config.js" defer></script>
-    <script src="js/auth.js" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدخول | OZZI</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="js/config.js" defer></script>
+<script src="js/auth.js" defer></script>
 </head>
-
 <body>
-
-    <main class="auth-page">
-
-        <section class="auth-card">
-
-            <div class="auth-logo">
-                OZZI
-            </div>
-
-            <p class="auth-slogan">
-                More than store
-            </p>
-
-            <h1>
-                تسجيل الدخول
-            </h1>
-
-            <p class="auth-description">
-                سجل دخولك إلى حسابك في OZZI
-            </p>
-
-            <form id="loginForm">
-
-                <div class="form-group">
-
-                    <label for="loginEmail">
-                        البريد الإلكتروني
-                    </label>
-
-                    <input
-                        id="loginEmail"
-                        type="email"
-                        placeholder="example@email.com"
-                        autocomplete="email"
-                        required
-                    >
-
-                </div>
-
-                <div class="form-group">
-
-                    <label for="loginPassword">
-                        كلمة المرور
-                    </label>
-
-                    <input
-                        id="loginPassword"
-                        type="password"
-                        placeholder="********"
-                        autocomplete="current-password"
-                        required
-                    >
-
-                </div>
-
-                <button
-                    type="submit"
-                    class="auth-button"
-                    id="loginButton"
-                >
-                    تسجيل الدخول
-                </button>
-
-                <p
-                    id="loginMessage"
-                    class="auth-message"
-                ></p>
-
-            </form>
-
-            <div class="auth-footer">
-
-                <span>
-                    ليس لديك حساب؟
-                </span>
-
-                <a href="register.html">
-                    إنشاء حساب
-                </a>
-
-            </div>
-
-            <a
-                href="index.html"
-                class="back-home"
-            >
-                العودة إلى المتجر
-            </a>
-
-        </section>
-
-    </main>
-
-</body>
-</html>
+<main class="auth-page"><section class="auth-card">
+<div class="auth-logo">OZZI</div><p class="auth-slogan">More than store</p>
+<h1>تسجيل الدخول</h1><p class="auth-description">سجل دخولك إلى حسابك في OZZI</p>
+<form id="loginForm">
+<div class="form-group"><label for="loginEmail">البريد الإلكتروني</label><input id="loginEmail" type="email" placeholder="example@email.com" autocomplete="email" required></div>
+<div class="form-group"><label for="loginPassword">كلمة المرور</label><input id="loginPassword" type="password" placeholder="********" autocomplete="current-password" required></div>
+<button type="submit" class="auth-button" id="loginButton">تسجيل الدخول</button>
+<p id="loginMessage" class="auth-message"></p></form>
+<div class="auth-footer"><span>ليس لديك حساب؟</span><a href="register.html">إنشاء حساب</a></div>
+<a href="index.html" class="back-home">العودة إلى المتجر</a>
+</section></main>
+</body></html>
