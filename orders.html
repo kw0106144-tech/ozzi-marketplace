@@ -47,6 +47,12 @@
     .order-footer{display:flex;justify-content:space-between;align-items:center;gap:15px;border-top:1px solid #eee;padding-top:16px;margin-top:10px}
     .order-total{font-size:20px;font-weight:900}
     .back-btn{display:inline-flex;margin-top:18px}
+    .shop-now-btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:13px 22px;border-radius:14px;background:linear-gradient(135deg,#071923,#08789d);color:#fff;text-decoration:none;font-weight:900;box-shadow:0 10px 24px rgba(8,120,157,.22);transition:transform .2s ease,box-shadow .2s ease,filter .2s ease}
+    .shop-now-btn:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(8,120,157,.3);filter:brightness(1.06)}
+    .shop-now-btn svg{width:18px;height:18px;transition:transform .2s ease}.shop-now-btn:hover svg{transform:translateX(-3px)}
+    .orders-empty{position:relative;overflow:hidden}
+    .orders-empty::before{content:"";position:absolute;width:180px;height:180px;left:-80px;top:-90px;border-radius:50%;background:rgba(8,120,157,.07);pointer-events:none}
+    .orders-empty>*{position:relative;z-index:1}
     @media(max-width:700px){
       .orders-page{margin:20px auto}
       .orders-card{padding:18px}
@@ -81,7 +87,7 @@
     <div id="ordersEmpty" class="orders-card orders-empty" style="display:none">
       <h2>لا توجد طلبات حتى الآن</h2>
       <p>ابدأ التسوق وأول طلب لك سيظهر هنا.</p>
-      <a class="btn btn-primary" href="index.html">ابدأ التسوق</a>
+      <a class="shop-now-btn" href="index.html">ابدأ التسوق <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
     </div>
 
     <section id="ordersList" style="display:none"></section>
