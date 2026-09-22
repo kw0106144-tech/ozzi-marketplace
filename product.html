@@ -35,7 +35,7 @@ main{padding:35px 0}.product-page{display:grid;grid-template-columns:1fr 1fr;gap
 <button id="buy" class="buy" type="button"><span class="buy-cart-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="20" r="1.6" fill="currentColor"/><circle cx="18" cy="20" r="1.6" fill="currentColor"/></svg></span>أضف للسلة</button><div id="message" class="message"></div>
 </div></section>
 <section id="similarSection" class="similar-section" style="display:none">
-<div class="similar-head"><h2>منتجات مشابهة</h2><p>منتجات أخرى من نفس التصنيف</p></div>
+<div class="similar-head"><h2>منتجات مشابهة</h2><p>منتجات هتعجبك</p></div>
 <div id="similarGrid" class="similar-grid"></div>
 </section>
 </main>
@@ -81,7 +81,7 @@ if(se)throw se;if(!similar||!similar.length)return;
 grid.innerHTML=similar.map(x=>{const n=x.name_ar||x.name||"منتج";const d=Number(x.original_price)>Number(x.price);return '<a class="similar-card" href="product.html?id='+encodeURIComponent(x.id)+'"><div class="similar-image">'+(x.image_url?'<img src="'+esc(x.image_url)+'" alt="'+esc(n)+'">':'<span style="font-size:55px">🛍️</span>')+'</div><div class="similar-body"><div class="similar-category">'+esc(x.category||"عام")+'</div><div class="similar-name">'+esc(n)+'</div><div class="similar-price">'+money(x.price)+" "+symbol+(d?'<span class="similar-old">'+money(x.original_price)+" "+symbol+"</span>":"")+'</div>'+(d?'<span class="similar-discount">خصم '+Math.round((1-x.price/x.original_price)*100)+'%</span>':"")+'</div></a>';}).join("");section.style.display="block";
 }catch(err){console.error("Similar products error:",err);}
 }
-document.getElementById("buy").onclick=()=>{window.ozziCart.addToCart({id:p.id,name,category:p.category||"عام",price:Number(p.price),image:images[0]||"",currency:symbol,country_code:p.country_code,quantity:qty});document.getElementById("message").style.display="block";document.getElementById("message").textContent="تمت إضافة المنتج إلى السلة 🛒";};
+document.getElementById("buy").onclick=()=>{window.ozziCart.addToCart({id:p.id,name,category:p.category||"عام",price:Number(p.price),image:images[0]||"",currency:symbol,country_code:p.country_code,quantity:qty});document.getElementById("message").style.display="block";document.getElementById("message").textContent="تمت إضافة المنتج إلى السلة";};
 loading.style.display="none";page.style.display="grid";updateCartCount();loadSimilarProducts();window.addEventListener("ozzi:cart-updated",updateCartCount);
 }catch(e){console.error(e);loading.style.display="none";errorBox.style.display="block";errorBox.textContent=e.message||"تعذر تحميل المنتج.";}
 })();
