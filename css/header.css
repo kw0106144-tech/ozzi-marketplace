@@ -101,3 +101,12 @@
   .user-country-flag{width:44px;height:34px;}
   .user-country-flag img{width:38px;height:25px;object-fit:cover;border-radius:3px;}
 }
+
+.container{width:min(1180px,calc(100% - 32px));margin-inline:auto;}
+.profile-icon{display:inline-grid;place-items:center;}
+.nav-actions{min-width:0;flex-wrap:nowrap;}
+@media(max-width:950px){
+  .nav{gap:14px;}
+  .nav-actions{overflow-x:auto;overflow-y:visible;scrollbar-width:none;padding:8px 2px;}
+  .nav-actions::-webkit-scrollbar{display:none;}
+}
