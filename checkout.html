@@ -26,6 +26,7 @@
     .checkout-message.error{display:block;background:#fff1f1;color:#b42318}
     .checkout-message.success{display:block;background:#effcf6;color:#067647}
     .empty-checkout{text-align:center;padding:50px 20px}
+    .order-number{font-weight:900}
     @media(max-width:800px){.checkout-grid{grid-template-columns:1fr}.checkout-page{margin:20px auto}}
   </style>
 </head>
@@ -125,9 +126,15 @@
         return new Intl.NumberFormat("ar-EG").format(value) + " ج.م";
       }
 
+      function setMessage(text, type) {
+        message.className = "checkout-message " + type;
+        message.textContent = text;
+      }
+
       try {
         const sb = window.ozziGetSupabase();
         const { data, error } = await sb.auth.getSession();
+
         if (error || !data.session) {
           window.location.replace("login.html?next=checkout.html");
           return;
@@ -135,11 +142,13 @@
 
         const user = data.session.user;
         const meta = user.user_metadata || {};
+
         document.getElementById("fullName").value = meta.full_name || "";
         document.getElementById("phone").value = meta.phone || "";
         document.getElementById("country").value = meta.country_code || "EG";
 
         const cart = window.ozziCart.getCart();
+
         if (!cart.length) {
           loading.style.display = "none";
           empty.style.display = "block";
@@ -147,11 +156,13 @@
         }
 
         let total = 0;
+
         itemsBox.innerHTML = cart.map(item => {
           const price = Number(item.price || 0);
           const qty = Number(item.quantity || 1);
           total += price * qty;
-          return \`
+
+          return `
             <div class="checkout-summary-item">
               <img src="${item.image || ""}" alt="">
               <div class="info">
@@ -160,60 +171,133 @@
               </div>
               <strong>${money(price * qty)}</strong>
             </div>
-          \`;
+          `;
         }).join("");
 
         totalBox.textContent = money(total);
         loading.style.display = "none";
         content.style.display = "block";
 
-        form.addEventListener("submit", function (event) {
+        form.addEventListener("submit", async function (event) {
           event.preventDefault();
+
           message.className = "checkout-message";
           message.textContent = "";
           submit.disabled = true;
-          submit.textContent = "جاري تجهيز الطلب...";
+          submit.textContent = "جاري حفظ الطلب...";
 
-          const name = document.getElementById("fullName").value.trim();
-          const phone = document.getElementById("phone").value.trim();
-          const country = document.getElementById("country").selectedOptions[0].textContent;
-          const address = document.getElementById("address").value.trim();
-          const notes = document.getElementById("notes").value.trim();
+          try {
+            const name = document.getElementById("fullName").value.trim();
+            const phone = document.getElementById("phone").value.trim();
+            const countryCode = document.getElementById("country").value;
+            const countryName = document.getElementById("country").selectedOptions[0].textContent;
+            const address = document.getElementById("address").value.trim();
+            const notes = document.getElementById("notes").value.trim();
+            const paymentMethod = document.getElementById("payment").value;
 
-          const lines = cart.map((item, index) =>
-            (index + 1) + "- " + (item.name || "منتج") + " × " + Number(item.quantity || 1) +
-            " = " + money(Number(item.price || 0) * Number(item.quantity || 1))
-          );
+            if (!name || !phone || !countryCode || !address) {
+              throw new Error("من فضلك أكمل بيانات التوصيل.");
+            }
 
-          const orderText =
-            "طلب جديد من OZZI%0A%0A" +
-            "العميل: " + encodeURIComponent(name) + "%0A" +
-            "الهاتف: " + encodeURIComponent(phone) + "%0A" +
-            "الدولة: " + encodeURIComponent(country) + "%0A" +
-            "العنوان: " + encodeURIComponent(address) + "%0A" +
-            (notes ? "ملاحظات: " + encodeURIComponent(notes) + "%0A" : "") +
-            "%0Aالمنتجات:%0A" + encodeURIComponent(lines.join("\n")) +
-            "%0A%0Aالإجمالي: " + encodeURIComponent(money(total)) +
-            "%0Aطريقة الدفع: الدفع عند الاستلام";
+            const orderPayload = {
+              user_id: user.id,
+              customer_name: name,
+              phone,
+              country_code: countryCode,
+              address,
+              notes: notes || null,
+              payment_method: paymentMethod,
+              status: "pending",
+              total
+            };
 
-          localStorage.setItem("ozzi_last_order", JSON.stringify({
-            user_id: user.id,
-            customer_name: name,
-            phone,
-            country,
-            address,
-            notes,
-            total,
-            items: cart,
-            created_at: new Date().toISOString()
-          }));
+            const { data: order, error: orderError } = await sb
+              .from("orders")
+              .insert(orderPayload)
+              .select("id, order_number")
+              .single();
 
-          window.ozziCart.clearCart();
-          message.className = "checkout-message success";
-          message.textContent = "تم تجهيز الطلب. سيتم تحويلك إلى واتساب لتأكيده.";
-          window.open("https://wa.me/201013532567?text=" + orderText, "_blank");
-          setTimeout(() => window.location.replace("index.html?order=success"), 900);
+            if (orderError) throw orderError;
+            if (!order) throw new Error("تعذر إنشاء الطلب.");
+
+            const orderItems = cart.map(item => ({
+              order_id: order.id,
+              product_id: String(item.id),
+              product_name: item.name || "منتج",
+              product_image: item.image || null,
+              unit_price: Number(item.price || 0),
+              quantity: Number(item.quantity || 1)
+            }));
+
+            const { error: itemsError } = await sb
+              .from("order_items")
+              .insert(orderItems);
+
+            if (itemsError) throw itemsError;
+
+            const lines = cart.map((item, index) =>
+              (index + 1) + "- " + (item.name || "منتج") + " × " +
+              Number(item.quantity || 1) + " = " +
+              money(Number(item.price || 0) * Number(item.quantity || 1))
+            );
+
+            const orderText =
+              "طلب جديد من OZZI\n\n" +
+              "رقم الطلب: #" + order.order_number + "\n" +
+              "العميل: " + name + "\n" +
+              "الهاتف: " + phone + "\n" +
+              "الدولة: " + countryName + "\n" +
+              "العنوان: " + address + "\n" +
+              (notes ? "ملاحظات: " + notes + "\n" : "") +
+              "\nالمنتجات:\n" + lines.join("\n") +
+              "\n\nالإجمالي: " + money(total) +
+              "\nطريقة الدفع: الدفع عند الاستلام";
+
+            localStorage.setItem("ozzi_last_order", JSON.stringify({
+              id: order.id,
+              order_number: order.order_number,
+              user_id: user.id,
+              customer_name: name,
+              phone,
+              country_code: countryCode,
+              address,
+              notes,
+              total,
+              items: cart,
+              created_at: new Date().toISOString()
+            }));
+
+            window.ozziCart.clearCart();
+
+            setMessage(
+              "تم حفظ الطلب بنجاح. رقم الطلب: #" + order.order_number +
+              " — سيتم تحويلك إلى واتساب لتأكيده.",
+              "success"
+            );
+
+            submit.textContent = "تم حفظ الطلب ✓";
+
+            const whatsappUrl =
+              "https://wa.me/201013532567?text=" +
+              encodeURIComponent(orderText);
+
+            window.open(whatsappUrl, "_blank");
+
+            setTimeout(function () {
+              window.location.replace("index.html?order=success&order_number=" + encodeURIComponent(order.order_number));
+            }, 1200);
+
+          } catch (err) {
+            console.error("OZZI ORDER ERROR:", err);
+            setMessage(
+              err.message || "حدث خطأ أثناء حفظ الطلب. حاول مرة أخرى.",
+              "error"
+            );
+            submit.disabled = false;
+            submit.textContent = "تأكيد الطلب";
+          }
         });
+
       } catch (err) {
         console.error("OZZI CHECKOUT ERROR:", err);
         loading.textContent = "حدث خطأ أثناء تجهيز صفحة الطلب. حاول مرة أخرى.";
