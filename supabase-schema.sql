@@ -35,6 +35,18 @@ create table if not exists public.order_items (
   line_total numeric(12,2) generated always as (unit_price * quantity) stored
 );
 
+-- Backward-compatible migration for projects where orders was created before country_code was added.
+alter table public.orders
+  add column if not exists country_code text default 'EG';
+
+update public.orders
+set country_code = 'EG'
+where country_code is null;
+
+alter table public.orders
+  alter column country_code set default 'EG',
+  alter column country_code set not null;
+
 -- Backward-compatible migration for projects where orders was created before order_number was added.
 alter table public.orders
   add column if not exists order_number bigint generated always as identity;
