@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>طلباتي | OZZI</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .orders-page{max-width:1100px;margin:40px auto;padding:0 20px}
+    .orders-header{margin-bottom:24px}
+    .orders-header h1{margin:0 0 8px}
+    .orders-header p{margin:0;color:#777}
+    .orders-card{background:#fff;border:1px solid #e8e8e8;border-radius:20px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.05);margin-bottom:18px}
+    .orders-loading,.orders-empty,.orders-error{text-align:center;padding:45px 20px}
+    .orders-empty h2{margin-top:0}
+    .order-card{background:#fff;border:1px solid #e7e7e7;border-radius:18px;padding:20px;margin-bottom:16px}
+    .order-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+    .order-number{font-size:20px;font-weight:900}
+    .order-date{color:#777;font-size:13px;margin-top:5px}
+    .order-status{display:inline-flex;align-items:center;padding:7px 12px;border-radius:999px;font-size:13px;font-weight:800}
+    .status-pending{background:#fff7e6;color:#9a6700}
+    .status-confirmed{background:#eef4ff;color:#175cd3}
+    .status-shipped{background:#f0f9ff;color:#026aa2}
+    .status-delivered{background:#ecfdf3;color:#067647}
+    .status-cancelled{background:#fff1f1;color:#b42318}
+    .order-info{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0;padding:15px;background:#fafafa;border-radius:14px}
+    .order-info div{min-width:0}
+    .order-info span{display:block;color:#777;font-size:12px;margin-bottom:5px}
+    .order-info strong{display:block;overflow-wrap:anywhere}
+    .order-items{border-top:1px solid #eee;margin-top:16px;padding-top:8px}
+    .order-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #eee}
+    .order-item:last-child{border-bottom:0}
+    .order-item img{width:60px;height:60px;object-fit:cover;border-radius:10px;background:#f5f5f5;flex:none}
+    .order-item-info{flex:1}
+    .order-item-name{font-weight:800}
+    .order-item-meta{font-size:13px;color:#777;margin-top:4px}
+    .order-item-total{font-weight:800;white-space:nowrap}
+    .order-footer{display:flex;justify-content:space-between;align-items:center;gap:15px;border-top:1px solid #eee;padding-top:16px;margin-top:10px}
+    .order-total{font-size:20px;font-weight:900}
+    .back-btn{display:inline-flex;margin-top:18px}
+    @media(max-width:700px){
+      .orders-page{margin:20px auto}
+      .orders-card{padding:18px}
+      .order-info{grid-template-columns:1fr}
+      .order-footer{align-items:flex-start;flex-direction:column}
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav">
+        <a class="logo" href="index.html">OZZI</a>
+        <div class="nav-actions">
+          <a class="btn btn-outline" href="cart.html">🛒 السلة</a>
+          <a class="btn btn-primary" href="profile.html">الملف الشخصي</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="orders-page">
+    <section class="orders-header">
+      <h1>طلباتي</h1>
+      <p>تابع جميع طلباتك وتفاصيل كل طلب وحالته.</p>
+    </section>
+
+    <div id="ordersLoading" class="orders-card orders-loading">جاري تحميل طلباتك...</div>
+
+    <div id="ordersError" class="orders-card orders-error" style="display:none"></div>
+
+    <div id="ordersEmpty" class="orders-card orders-empty" style="display:none">
+      <h2>لا توجد طلبات حتى الآن</h2>
+      <p>ابدأ التسوق وأول طلب لك سيظهر هنا.</p>
+      <a class="btn btn-primary" href="index.html">ابدأ التسوق</a>
+    </div>
+
+    <section id="ordersList" style="display:none"></section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    (async function () {
+      const loading = document.getElementById("ordersLoading");
+      const errorBox = document.getElementById("ordersError");
+      const empty = document.getElementById("ordersEmpty");
+      const list = document.getElementById("ordersList");
+
+      const statusLabels = {
+        pending: "قيد المراجعة",
+        confirmed: "تم تأكيد الطلب",
+        shipped: "تم الشحن",
+        delivered: "تم التسليم",
+        cancelled: "ملغي"
+      };
+
+      function money(value) {
+        return new Intl.NumberFormat("ar-EG").format(Number(value || 0)) + " ج.م";
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, function (char) {
+          return ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+          })[char];
+        });
+      }
+
+      function formatDate(value) {
+        return new Intl.DateTimeFormat("ar-EG", {
+          dateStyle: "medium",
+          timeStyle: "short"
+        }).format(new Date(value));
+      }
+
+      function countryName(code) {
+        return ({
+          EG: "مصر",
+          SA: "السعودية",
+          AE: "الإمارات",
+          IQ: "العراق",
+          OM: "سلطنة عُمان"
+        })[code] || code || "—";
+      }
+
+      function renderOrder(order) {
+        const status = order.status || "pending";
+        const items = Array.isArray(order.order_items) ? order.order_items : [];
+
+        const itemsHtml = items.length
+          ? items.map(item => `
+              <div class="order-item">
+                <img src="${escapeHtml(item.product_image || "")}" alt="">
+                <div class="order-item-info">
+                  <div class="order-item-name">${escapeHtml(item.product_name || "منتج")}</div>
+                  <div class="order-item-meta">${Number(item.quantity || 0)} × ${money(item.unit_price)}</div>
+                </div>
+                <div class="order-item-total">${money(item.line_total)}</div>
+              </div>
+            `).join("")
+          : '<p style="color:#777">لا توجد تفاصيل منتجات لهذا الطلب.</p>';
+
+        return `
+          <article class="order-card">
+            <div class="order-top">
+              <div>
+                <div class="order-number">طلب #${escapeHtml(order.order_number)}</div>
+                <div class="order-date">${escapeHtml(formatDate(order.created_at))}</div>
+              </div>
+              <span class="order-status status-${escapeHtml(status)}">
+                ${escapeHtml(statusLabels[status] || status)}
+              </span>
+            </div>
+
+            <div class="order-info">
+              <div>
+                <span>العميل</span>
+                <strong>${escapeHtml(order.customer_name)}</strong>
+              </div>
+              <div>
+                <span>الهاتف</span>
+                <strong>${escapeHtml(order.phone)}</strong>
+              </div>
+              <div>
+                <span>الدولة</span>
+                <strong>${escapeHtml(countryName(order.country_code))}</strong>
+              </div>
+              <div>
+                <span>طريقة الدفع</span>
+                <strong>${order.payment_method === "cod" ? "الدفع عند الاستلام" : escapeHtml(order.payment_method)}</strong>
+              </div>
+              <div style="grid-column:span 2">
+                <span>العنوان</span>
+                <strong>${escapeHtml(order.address)}</strong>
+              </div>
+            </div>
+
+            <div class="order-items">
+              <strong>المنتجات</strong>
+              ${itemsHtml}
+            </div>
+
+            ${order.notes ? `
+              <div style="margin-top:14px;padding:12px;border-radius:12px;background:#fafafa">
+                <span style="color:#777;font-size:12px">ملاحظات</span>
+                <div style="margin-top:5px">${escapeHtml(order.notes)}</div>
+              </div>
+            ` : ""}
+
+            <div class="order-footer">
+              <div>
+                <span style="display:block;color:#777;font-size:13px">إجمالي الطلب</span>
+                <div class="order-total">${money(order.total)}</div>
+              </div>
+              <a class="btn btn-outline" href="index.html">العودة للتسوق</a>
+            </div>
+          </article>
+        `;
+      }
+
+      try {
+        const sb = window.ozziGetSupabase();
+        const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+
+        if (sessionError || !sessionData.session) {
+          window.location.replace("login.html?next=orders.html");
+          return;
+        }
+
+        const user = sessionData.session.user;
+
+        const { data: orders, error: ordersError } = await sb
+          .from("orders")
+          .select(`
+            id,
+            order_number,
+            customer_name,
+            phone,
+            country_code,
+            address,
+            notes,
+            payment_method,
+            status,
+            total,
+            created_at,
+            updated_at,
+            order_items (
+              id,
+              product_id,
+              product_name,
+              product_image,
+              unit_price,
+              quantity,
+              line_total
+            )
+          `)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (ordersError) throw ordersError;
+
+        loading.style.display = "none";
+
+        if (!orders || !orders.length) {
+          empty.style.display = "block";
+          return;
+        }
+
+        list.innerHTML = orders.map(renderOrder).join("");
+        list.style.display = "block";
+      } catch (err) {
+        console.error("OZZI ORDERS ERROR:", err);
+        loading.style.display = "none";
+        errorBox.style.display = "block";
+        errorBox.innerHTML =
+          "<strong>حدث خطأ أثناء تحميل الطلبات.</strong><br>" +
+          escapeHtml(err.message || "حاول تحديث الصفحة مرة أخرى.");
+      }
+    })();
+  </script>
+</body>
+</html>
