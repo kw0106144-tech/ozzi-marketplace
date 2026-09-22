@@ -35,6 +35,13 @@ create table if not exists public.order_items (
   line_total numeric(12,2) generated always as (unit_price * quantity) stored
 );
 
+-- Backward-compatible migration for projects where orders was created before order_number was added.
+alter table public.orders
+  add column if not exists order_number bigint generated always as identity;
+
+create unique index if not exists orders_order_number_uidx
+  on public.orders(order_number);
+
 create index if not exists orders_user_id_idx on public.orders(user_id);
 create index if not exists orders_created_at_idx on public.orders(created_at desc);
 create index if not exists order_items_order_id_idx on public.order_items(order_id);
