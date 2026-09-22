@@ -226,3 +226,30 @@ drop policy if exists "Admins can update sellers" on public.sellers;
 create policy "Admins can update sellers" on public.sellers for update to authenticated using (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager'))) with check (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager')));
 drop policy if exists "Admins can delete sellers" on public.sellers;
 create policy "Admins can delete sellers" on public.sellers for delete to authenticated using (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager')));
+
+
+-- Public storefront read access for guests.
+-- Products and product images are public catalog data; only admins can write.
+drop policy if exists "Anyone can view active products" on public.products;
+create policy "Anyone can view active products"
+on public.products for select
+to anon, authenticated
+using (
+  active = true
+  or exists(select 1 from public.admin_roles a where a.user_id=auth.uid())
+);
+
+drop policy if exists "Anyone can view active product prices" on public.product_prices;
+create policy "Anyone can view active product prices"
+on public.product_prices for select
+to anon, authenticated
+using (
+  active = true
+  or exists(select 1 from public.admin_roles a where a.user_id=auth.uid())
+);
+
+drop policy if exists "Anyone can view product images" on public.product_images;
+create policy "Anyone can view product images"
+on public.product_images for select
+to anon, authenticated
+using (true);
