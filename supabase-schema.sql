@@ -71,6 +71,9 @@ create table if not exists public.products (
 );
 
 -- Compatibility with older OZZI product tables.
+alter table public.products add column if not exists original_price numeric(12,2);
+update public.products set original_price = null where original_price is not null and original_price <= price;
+alter table public.products add constraint products_original_price_check check (original_price is null or original_price >= price);
 alter table public.products add column if not exists name_ar text;
 update public.products set name_ar = name where name_ar is null;
 alter table public.products alter column name_ar set not null;
