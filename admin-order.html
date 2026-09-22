@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تفاصيل الطلب | OZZI</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+body{background:#f5f7fa}.page{max-width:1100px;margin:30px auto;padding:0 20px}
+.card{background:#fff;border:1px solid #e8e8e8;border-radius:18px;padding:22px;box-shadow:0 8px 25px rgba(0,0,0,.05);margin-bottom:18px}
+.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:18px}
+h1,h2{margin-top:0}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.info{background:#f8f9fb;border-radius:12px;padding:14px}.label{color:#777;font-size:13px}.value{font-weight:700;margin-top:5px}
+.items{width:100%;border-collapse:collapse}.items th,.items td{padding:12px;border-bottom:1px solid #eee;text-align:right}
+.product{display:flex;align-items:center;gap:10px}.product img{width:52px;height:52px;object-fit:cover;border-radius:9px;background:#eee}
+.status{padding:10px;border:1px solid #ddd;border-radius:10px;font:inherit}
+.summary{max-width:420px;margin-right:auto}.row{display:flex;justify-content:space-between;padding:10px 0}.total{font-size:20px;font-weight:900;border-top:1px solid #eee;padding-top:14px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}.message{display:none;padding:14px;border-radius:10px;margin-bottom:15px}.message.show{display:block}.ok{background:#effcf6;color:#067647}.err{background:#fff1f1;color:#b42318}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.table-wrap{overflow:auto}.items{min-width:700px}}
+</style>
+</head>
+<body>
+<header class="site-header"><div class="container"><nav class="nav">
+<a class="logo" href="index.html">OZZI</a>
+<div class="nav-actions"><a class="btn btn-outline" href="admin.html">لوحة التحكم</a><button class="btn btn-outline" onclick="logoutUser()">تسجيل الخروج</button></div>
+</nav></div></header>
+
+<main class="page">
+<div id="message" class="message"></div>
+<div class="top">
+<div><h1 id="title">تفاصيل الطلب</h1><p id="date" class="label"></p></div>
+<div class="actions"><a class="btn btn-outline" href="admin.html">← العودة للطلبات</a><a id="whatsapp" class="btn btn-primary" target="_blank" rel="noopener">واتساب العميل</a></div>
+</div>
+
+<section class="card">
+<h2>👤 بيانات العميل</h2>
+<div class="grid" id="customer"></div>
+</section>
+
+<section class="card">
+<h2>📦 المنتجات</h2>
+<div class="table-wrap"><table class="items"><thead><tr><th>المنتج</th><th>السعر</th><th>الكمية</th><th>الإجمالي</th></tr></thead><tbody id="items"></tbody></table></div>
+<div class="summary">
+<div class="row"><span>قيمة المنتجات</span><strong id="subtotal">—</strong></div>
+<div class="row"><span>الشحن</span><strong id="shipping">—</strong></div>
+<div class="row total"><span>الإجمالي النهائي</span><strong id="total">—</strong></div>
+</div>
+</section>
+
+<section class="card">
+<h2>🔄 حالة الطلب</h2>
+<div class="actions">
+<select id="status" class="status">
+<option value="pending">قيد المراجعة</option><option value="confirmed">تم التأكيد</option><option value="shipped">تم الشحن</option><option value="delivered">تم التسليم</option><option value="cancelled">ملغي</option>
+</select>
+<button id="save" class="btn btn-primary">حفظ الحالة</button>
+</div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script><script src="js/auth.js"></script>
+<script>
+(async function(){
+const msg=document.getElementById("message");
+const countries={EG:"مصر",SA:"السعودية",AE:"الإمارات",IQ:"العراق",OM:"سلطنة عُمان"};
+const labels={pending:"قيد المراجعة",confirmed:"تم التأكيد",shipped:"تم الشحن",delivered:"تم التسليم",cancelled:"ملغي"};
+const params=new URLSearchParams(location.search), orderId=params.get("id");
+function show(t,ok){msg.textContent=t;msg.className="message show "+(ok?"ok":"err")}
+function money(v){return new Intl.NumberFormat("ar-EG").format(Number(v||0))+" ج.م"}
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",""":"&quot;","'":"&#039;"}[m]))}
+try{
+if(!orderId)throw new Error("رقم الطلب غير موجود.");
+const sb=window.ozziGetSupabase(), {data:sd,error:se}=await sb.auth.getSession();
+if(se||!sd.session){location.replace("login.html");return}
+const {data:role,error:re}=await sb.from("admin_roles").select("role").eq("user_id",sd.session.user.id).maybeSingle();
+if(re||!role||!["admin","manager"].includes(role.role)){location.replace("index.html");return}
+
+const {data:o,error:oe}=await sb.from("orders").select("id,order_number,customer_name,phone,country_code,address,notes,payment_method,status,total,shipping_cost,created_at,updated_at").eq("id",orderId).single();
+if(oe)throw oe;
+const {data:items,error:ie}=await sb.from("order_items").select("product_id,product_name,product_image,unit_price,quantity,line_total").eq("order_id",orderId);
+if(ie)throw ie;
+
+document.getElementById("title").textContent="تفاصيل الطلب #"+o.order_number;
+document.getElementById("date").textContent="تم إنشاء الطلب: "+new Date(o.created_at).toLocaleString("ar-EG");
+document.getElementById("customer").innerHTML=[
+["الاسم",o.customer_name],["الهاتف",o.phone],["الدولة",countries[o.country_code]||o.country_code],["العنوان",o.address],["طريقة الدفع",o.payment_method==="cod"?"الدفع عند الاستلام":o.payment_method],["ملاحظات",o.notes||"لا توجد"]
+].map(x=>'<div class="info"><div class="label">'+esc(x[0])+'</div><div class="value">'+esc(x[1])+'</div></div>').join("");
+
+document.getElementById("items").innerHTML=(items||[]).map(i=>'<tr><td><div class="product">'+(i.product_image?'<img src="'+esc(i.product_image)+'" alt="">':"")+'<span>'+esc(i.product_name)+'</span></div></td><td>'+money(i.unit_price)+'</td><td>'+esc(i.quantity)+'</td><td>'+money(i.line_total)+'</td></tr>').join("")||'<tr><td colspan="4">لا توجد منتجات.</td></tr>';
+
+const shipping=Number(o.shipping_cost||0), total=Number(o.total||0), subtotal=total-shipping;
+document.getElementById("subtotal").textContent=money(subtotal);
+document.getElementById("shipping").textContent=shipping===0?"مجاني":money(shipping);
+document.getElementById("total").textContent=money(total);
+document.getElementById("status").value=o.status;
+
+const wa="https://wa.me/"+String(o.phone||"").replace(/D/g,"")+"?text="+encodeURIComponent("مرحبًا "+o.customer_name+"، معك OZZI بخصوص طلبك رقم #"+o.order_number+".");
+document.getElementById("whatsapp").href=wa;
+
+document.getElementById("save").onclick=async()=>{
+const btn=document.getElementById("save"), status=document.getElementById("status").value;
+btn.disabled=true;
+const {error}=await sb.from("orders").update({status}).eq("id",o.id);
+btn.disabled=false;
+if(error){show("تعذر تحديث حالة الطلب: "+error.message,false);return}
+show("تم تحديث حالة الطلب إلى: "+labels[status],true);
+};
+}catch(e){console.error(e);show(e.message||"حدث خطأ أثناء تحميل الطلب.",false)}
+})();
+</script>
+</body>
+</html>
