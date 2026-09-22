@@ -39,7 +39,8 @@ const id=new URLSearchParams(location.search).get("id");
 const loading=document.getElementById("loading"),errorBox=document.getElementById("error"),page=document.getElementById("productPage");
 const countryNames={EG:"مصر",SA:"السعودية",AE:"الإمارات",IQ:"العراق",OM:"سلطنة عُمان"};
 const symbols={EG:"ج.م",SA:"ر.س",AE:"د.إ",IQ:"ع.ع",OM:"ر.ع"};
-const money=v=>new Intl.NumberFormat("ar-EG",{maximumFractionDigits:0}).format(Math.round(Number(v)||0));\nfunction updateCartCount(){const el=document.getElementById("cartCount");if(el)el.textContent=window.ozziCart?window.ozziCart.cartCount():0;}
+const money=v=>new Intl.NumberFormat("ar-EG",{maximumFractionDigits:0}).format(Math.round(Number(v)||0));
+function updateCartCount(){const el=document.getElementById("cartCount");if(el)el.textContent=window.ozziCart?window.ozziCart.cartCount():0;}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
 try{
 if(!id)throw new Error("لم يتم تحديد المنتج.");
