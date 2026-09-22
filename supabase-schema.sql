@@ -277,3 +277,53 @@ drop policy if exists "Users can add own favorites" on public.favorites;
 create policy "Users can add own favorites" on public.favorites for insert to authenticated with check (user_id=auth.uid());
 drop policy if exists "Users can remove own favorites" on public.favorites;
 create policy "Users can remove own favorites" on public.favorites for delete to authenticated using (user_id=auth.uid());
+
+
+-- Notifications.
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  type text not null check (type in ('order_status','discount','product_arrival')),
+  title text not null,
+  message text not null,
+  product_id uuid references public.products(id) on delete cascade,
+  order_id uuid references public.orders(id) on delete cascade,
+  is_read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists notifications_user_created_idx on public.notifications(user_id,created_at desc);
+create index if not exists notifications_user_unread_idx on public.notifications(user_id,is_read,created_at desc);
+alter table public.notifications enable row level security;
+drop policy if exists "Users can view own notifications" on public.notifications;
+create policy "Users can view own notifications" on public.notifications for select to authenticated using (user_id=auth.uid());
+drop policy if exists "Users can update own notifications" on public.notifications;
+create policy "Users can update own notifications" on public.notifications for update to authenticated using (user_id=auth.uid()) with check (user_id=auth.uid());
+
+create or replace function public.ozzi_notify_order_status()
+returns trigger language plpgsql security definer set search_path=public
+as $$
+begin
+  if new.status is distinct from old.status then
+    insert into public.notifications(user_id,type,title,message,order_id)
+    values(new.user_id,'order_status','تحديث حالة طلبك','تم تحديث حالة الطلب رقم '||new.order_number||' إلى: '||case new.status when 'pending' then 'قيد المراجعة' when 'confirmed' then 'تم تأكيد الطلب' when 'shipped' then 'تم الشحن' when 'delivered' then 'تم التسليم' when 'cancelled' then 'ملغي' else new.status end,new.id);
+  end if;
+  return new;
+end; $$;
+drop trigger if exists trg_ozzi_order_status_notification on public.orders;
+create trigger trg_ozzi_order_status_notification after update of status on public.orders for each row execute function public.ozzi_notify_order_status();
+
+create or replace function public.ozzi_notify_product_changes()
+returns trigger language plpgsql security definer set search_path=public
+as $$
+begin
+  if new.active=true and new.stock>0 and (old.active=false or old.stock<=0) then
+    insert into public.notifications(user_id,type,title,message,product_id)
+    select id,'product_arrival','منتج وصل من جديد','المنتج "'||coalesce(new.name,'منتج')||'" أصبح متاحًا الآن.',new.id from auth.users;
+  elsif new.active=true and new.price < coalesce(new.original_price,new.price) and (old.price is distinct from new.price or old.original_price is distinct from new.original_price) then
+    insert into public.notifications(user_id,type,title,message,product_id)
+    select id,'discount','خصم جديد على منتج','المنتج "'||coalesce(new.name,'منتج')||'" عليه خصم جديد.',new.id from auth.users;
+  end if;
+  return new;
+end; $$;
+drop trigger if exists trg_ozzi_product_notification on public.products;
+create trigger trg_ozzi_product_notification after update on public.products for each row execute function public.ozzi_notify_product_changes();
