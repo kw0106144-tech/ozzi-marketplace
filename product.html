@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>OZZI | تفاصيل المنتج</title>
+<style>
+:root{--p:#1B91B7;--dark:#071923;--bg:#F5FAFC;--muted:#607985;--border:#DCEBF0}
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:var(--bg);color:#10212B}.container{width:min(1120px,calc(100% - 28px));margin:auto}
+header{background:var(--dark);color:#fff;padding:16px 0}.nav{display:flex;justify-content:space-between;align-items:center;gap:15px}.logo{font-size:30px;font-weight:900;letter-spacing:2px}.actions{display:flex;gap:10px}.btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border-radius:11px;text-decoration:none;border:1px solid rgba(255,255,255,.2);color:#fff;background:transparent;font-weight:800;cursor:pointer}.primary{background:var(--p);border-color:var(--p)}
+main{padding:35px 0}.product-page{display:grid;grid-template-columns:1fr 1fr;gap:35px;background:#fff;border:1px solid var(--border);border-radius:24px;padding:24px;box-shadow:0 15px 40px rgba(7,25,35,.07)}
+.gallery-main{height:470px;border-radius:18px;background:#eef9fc;display:grid;place-items:center;position:relative;overflow:hidden}.gallery-main img{width:100%;height:100%;object-fit:contain}.thumbs{display:flex;gap:10px;overflow:auto;margin-top:12px}.thumb{width:78px;height:78px;flex:0 0 auto;border:2px solid transparent;border-radius:10px;background:#eef9fc;cursor:pointer;overflow:hidden}.thumb.active{border-color:var(--p)}.thumb img{width:100%;height:100%;object-fit:cover}
+.info{padding:10px}.category{color:var(--muted);font-size:14px}.title{font-size:34px;margin:8px 0 15px}.price{font-size:30px;font-weight:900;color:#08789D}.old{font-size:15px;color:#899;text-decoration:line-through;margin-top:3px}.discount{display:inline-block;background:#E5484D;color:#fff;padding:6px 10px;border-radius:999px;font-weight:800;margin:12px 0}.desc{color:#536A73;line-height:1.9;margin:20px 0}.stock{font-weight:800;margin:15px 0}.qty{display:flex;align-items:center;gap:10px;margin:18px 0}.qty button{width:40px;height:40px;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:20px}.qty span{min-width:35px;text-align:center;font-weight:900}.buy{width:100%;border:0;border-radius:13px;background:var(--p);color:#fff;padding:15px;font-weight:900;font-size:17px;cursor:pointer}.message{margin-top:15px;padding:12px;border-radius:10px;background:#eef9fc;color:#08789D;display:none}.loading,.error{text-align:center;background:#fff;padding:50px;border-radius:20px;border:1px solid var(--border)}
+@media(max-width:800px){.product-page{grid-template-columns:1fr}.gallery-main{height:350px}.title{font-size:28px}}
+</style>
+</head>
+<body>
+<header><div class="container nav"><a class="logo" href="index.html">OZZI</a><div class="actions"><a class="btn" href="cart.html">🛒 السلة</a><a class="btn primary" href="index.html">المتجر</a></div></div></header>
+<main class="container">
+<div id="loading" class="loading">جاري تحميل المنتج...</div>
+<div id="error" class="error" style="display:none"></div>
+<section id="productPage" class="product-page" style="display:none">
+<div><div id="mainImage" class="gallery-main"></div><div id="thumbs" class="thumbs"></div></div>
+<div class="info">
+<div id="category" class="category"></div><h1 id="title" class="title"></h1><div id="discount"></div><div id="price" class="price"></div><div id="oldPrice" class="old"></div><div id="description" class="desc"></div><div id="stock" class="stock"></div>
+<div class="qty"><button id="minus" type="button">−</button><span id="qty">1</span><button id="plus" type="button">+</button></div>
+<button id="buy" class="buy" type="button">أضف للسلة 🛒</button><div id="message" class="message"></div>
+</div></section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script><script src="js/auth.js"></script><script src="js/cart.js"></script>
+<script>
+(async function(){
+const id=new URLSearchParams(location.search).get("id");
+const loading=document.getElementById("loading"),errorBox=document.getElementById("error"),page=document.getElementById("productPage");
+const countryNames={EG:"مصر",SA:"السعودية",AE:"الإمارات",IQ:"العراق",OM:"سلطنة عُمان"};
+const symbols={EG:"ج.م",SA:"ر.س",AE:"د.إ",IQ:"ع.ع",OM:"ر.ع"};
+const money=v=>new Intl.NumberFormat("ar-EG",{maximumFractionDigits:0}).format(Math.round(Number(v)||0));
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
+try{
+if(!id)throw new Error("لم يتم تحديد المنتج.");
+const sb=window.ozziGetSupabase();
+const session=(await sb.auth.getSession()).data.session;
+const accountCountry=String(session?.user?.user_metadata?.country_code||localStorage.getItem("ozzi_country")||"EG").toUpperCase();
+const {data:p,error:e}=await sb.from("products").select("id,name,name_ar,name_en,category,description,price,original_price,image_url,stock,country_code,active").eq("id",id).eq("active",true).single();
+if(e)throw e;if(!p)throw new Error("المنتج غير موجود.");
+if(p.country_code!==accountCountry)throw new Error("هذا المنتج غير متاح في دولة حسابك.");
+const {data:imgs,error:ie}=await sb.from("product_images").select("image_url,sort_order").eq("product_id",id).order("sort_order");
+if(ie)throw ie;
+const images=[p.image_url,...(imgs||[]).map(x=>x.image_url)].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i);
+const symbol=symbols[p.country_code]||"ج.م";const name=p.name_ar||p.name||"منتج";const hasDiscount=Number(p.original_price)>Number(p.price);
+document.getElementById("category").textContent=p.category||"عام";document.getElementById("title").textContent=name;
+document.getElementById("price").textContent=money(p.price)+" "+symbol;
+document.getElementById("oldPrice").textContent=hasDiscount?money(p.original_price)+" "+symbol:"";
+document.getElementById("discount").innerHTML=hasDiscount?'<span class="discount">خصم '+Math.round((1-p.price/p.original_price)*100)+'%</span>':"";
+document.getElementById("description").textContent=p.description||"لا يوجد وصف إضافي لهذا المنتج.";
+document.getElementById("stock").textContent="متوفر: "+Number(p.stock||0)+" قطعة";
+let qty=1;const qtyEl=document.getElementById("qty");const setQty=v=>{qty=Math.max(1,Math.min(Number(p.stock||1),v));qtyEl.textContent=qty};document.getElementById("minus").onclick=()=>setQty(qty-1);document.getElementById("plus").onclick=()=>setQty(qty+1);
+const main=document.getElementById("mainImage"),thumbs=document.getElementById("thumbs");
+function setImage(src,index){main.innerHTML=src?'<img src="'+esc(src)+'" alt="'+esc(name)+'">':'<span style="font-size:70px">🛍️</span>';thumbs.querySelectorAll(".thumb").forEach((x,i)=>x.classList.toggle("active",i===index));}
+thumbs.innerHTML=images.map((src,i)=>'<button class="thumb '+(i===0?"active":"")+'" type="button" data-i="'+i+'"><img src="'+esc(src)+'" alt=""></button>').join("");
+thumbs.querySelectorAll(".thumb").forEach(b=>b.onclick=()=>setImage(images[Number(b.dataset.i)],Number(b.dataset.i)));setImage(images[0]||"",0);
+document.getElementById("buy").onclick=()=>{window.ozziCart.addToCart({id:p.id,name,category:p.category||"عام",price:Number(p.price),image:images[0]||"",currency:symbol,country_code:p.country_code,quantity:qty});document.getElementById("message").style.display="block";document.getElementById("message").textContent="تمت إضافة المنتج إلى السلة 🛒";};
+loading.style.display="none";page.style.display="grid";
+}catch(e){console.error(e);loading.style.display="none";errorBox.style.display="block";errorBox.textContent=e.message||"تعذر تحميل المنتج.";}
+})();
+</script>
+</body></html>
