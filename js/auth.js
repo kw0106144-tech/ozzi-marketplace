@@ -44,14 +44,20 @@
       const countrySection = document.getElementById("countrySection");
       if (countrySection) countrySection.style.display = loggedIn ? "none" : "";
 
-      const countryFlags = { EG:"🇪🇬", SA:"🇸🇦", AE:"🇦🇪", IQ:"🇮🇶", OM:"🇴🇲" };
+      const countryFlags = {
+        EG: '<svg viewBox="0 0 900 600" role="img" aria-label="مصر"><rect width="900" height="200" fill="#ce1126"/><rect y="200" width="900" height="200" fill="#fff"/><rect y="400" width="900" height="200" fill="#000"/><circle cx="450" cy="300" r="48" fill="#c09300"/></svg>',
+        SA: '<svg viewBox="0 0 900 600" role="img" aria-label="السعودية"><rect width="900" height="600" fill="#006c35"/><path d="M170 355h560" stroke="#fff" stroke-width="22" stroke-linecap="round"/><circle cx="260" cy="275" r="28" fill="#fff"/></svg>',
+        AE: '<svg viewBox="0 0 900 600" role="img" aria-label="الإمارات"><rect width="900" height="200" fill="#00732f"/><rect y="200" width="900" height="200" fill="#fff"/><rect y="400" width="900" height="200" fill="#000"/><rect width="230" height="600" fill="#ff0000"/></svg>',
+        IQ: '<svg viewBox="0 0 900 600" role="img" aria-label="العراق"><rect width="900" height="200" fill="#ce1126"/><rect y="200" width="900" height="200" fill="#fff"/><rect y="400" width="900" height="200" fill="#000"/><text x="450" y="335" text-anchor="middle" font-size="70" font-weight="700" fill="#178a3b">الله أكبر</text></svg>',
+        OM: '<svg viewBox="0 0 900 600" role="img" aria-label="عُمان"><rect width="900" height="200" fill="#fff"/><rect y="200" width="900" height="200" fill="#d61c2f"/><rect y="400" width="900" height="200" fill="#16823b"/><rect width="230" height="600" fill="#fff"/><rect width="230" height="600" fill="#d61c2f"/><path d="M80 130l45 70-45 70 45 70-45 70" fill="none" stroke="#fff" stroke-width="22"/></svg>'
+      };
       const flagEl = document.getElementById("userCountryFlag");
       if (flagEl) {
         const code = String(meta.country_code || "").toUpperCase();
-        flagEl.textContent = countryFlags[code] || "";
+        flagEl.innerHTML = countryFlags[code] || "";
         flagEl.setAttribute("aria-label", code ? "دولة الحساب: " + code : "دولة الحساب");
         flagEl.title = code ? "دولة الحساب: " + code : "دولة الحساب";
-        flagEl.style.setProperty("display", loggedIn && countryFlags[code] ? "inline-grid" : "none", "important");
+        flagEl.style.setProperty("display", loggedIn && countryFlags[code] ? "inline-flex" : "none", "important");
       }
     } catch (err) {
       console.error("OZZI AUTH HEADER ERROR:", err);
