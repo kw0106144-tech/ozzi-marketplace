@@ -606,6 +606,9 @@
     .search-clear{border:0;background:#EEF4F6;color:var(--ozzi-muted);width:36px;height:36px;border-radius:10px;cursor:pointer;font-weight:900;display:none;flex:0 0 36px}
     .search-clear.show{display:grid;place-items:center}
     .search-result-count{color:var(--ozzi-muted);font-size:13px;margin:-10px 0 18px;font-weight:700}
+    .product-filters{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 18px}
+    .product-filters select{width:100%;padding:12px 13px;border:1px solid var(--ozzi-border);border-radius:12px;background:#fff;color:var(--ozzi-text);font-weight:800;outline:none;cursor:pointer}
+    .product-filters select:focus{border-color:var(--ozzi-primary);box-shadow:0 0 0 4px rgba(27,145,183,.1)}
 
     /* Responsive */
     @media (max-width: 950px) {
@@ -697,6 +700,7 @@
       .products { grid-template-columns: 1fr; }
 
       .footer-grid { grid-template-columns: 1fr; }
+      .product-filters{grid-template-columns:1fr 1fr}
     }
   </style>
 </head>
@@ -833,6 +837,28 @@
         <button id="searchClear" class="search-clear" type="button" aria-label="مسح البحث">×</button>
       </div>
       <div id="searchResultCount" class="search-result-count" style="display:none"></div>
+      <div class="product-filters" aria-label="فلترة وترتيب المنتجات">
+        <select id="categoryFilter" aria-label="التصنيف">
+          <option value="">كل التصنيفات</option>
+        </select>
+        <select id="priceFilter" aria-label="السعر">
+          <option value="">كل الأسعار</option>
+          <option value="0-500">أقل من 500</option>
+          <option value="500-1000">500 إلى 1000</option>
+          <option value="1000-3000">1000 إلى 3000</option>
+          <option value="3000-plus">أكثر من 3000</option>
+        </select>
+        <select id="discountFilter" aria-label="العروض">
+          <option value="">كل المنتجات</option>
+          <option value="discount">المنتجات المخفضة</option>
+        </select>
+        <select id="sortProducts" aria-label="ترتيب المنتجات">
+          <option value="newest">الأحدث</option>
+          <option value="price-low">السعر: من الأقل للأعلى</option>
+          <option value="price-high">السعر: من الأعلى للأقل</option>
+          <option value="name">الاسم: أ - ي</option>
+        </select>
+      </div>
       <div id="productsGrid" class="products">
         <div class="product-loading">جاري تحميل المنتجات...</div>
       </div>
@@ -969,11 +995,30 @@
       const grid=document.getElementById("productsGrid");
       const resultCount=document.getElementById("searchResultCount");
       const query=activeSearch.trim().toLocaleLowerCase("ar");
+      const category=document.getElementById("categoryFilter")?.value||"";
+      const priceFilter=document.getElementById("priceFilter")?.value||"";
+      const discountFilter=document.getElementById("discountFilter")?.value||"";
+      const sort=document.getElementById("sortProducts")?.value||"newest";
       if(!grid)return;
-      const filtered=allProducts.filter(product=>{
-        if(!query)return true;
-        const haystack=[product.name,product.name_ar,product.name_en,product.category].filter(Boolean).join(" ").toLocaleLowerCase("ar");
-        return haystack.includes(query);
+      let filtered=allProducts.filter(product=>{
+        const nameHay=[product.name,product.name_ar,product.name_en,product.category].filter(Boolean).join(" ").toLocaleLowerCase("ar");
+        const price=Number(product.price)||0;
+        const hasDiscount=Number(product.original_price)>price;
+        const matchesSearch=!query||nameHay.includes(query);
+        const matchesCategory=!category||String(product.category||"")===category;
+        let matchesPrice=true;
+        if(priceFilter==="0-500")matchesPrice=price<500;
+        else if(priceFilter==="500-1000")matchesPrice=price>=500&&price<=1000;
+        else if(priceFilter==="1000-3000")matchesPrice=price>1000&&price<=3000;
+        else if(priceFilter==="3000-plus")matchesPrice=price>3000;
+        const matchesDiscount=discountFilter!=="discount"||hasDiscount;
+        return matchesSearch&&matchesCategory&&matchesPrice&&matchesDiscount;
+      });
+      filtered.sort((a,b)=>{
+        if(sort==="price-low")return Number(a.price)-Number(b.price);
+        if(sort==="price-high")return Number(b.price)-Number(a.price);
+        if(sort==="name")return String(a.name_ar||a.name||"").localeCompare(String(b.name_ar||b.name||""),"ar");
+        return new Date(b.created_at||0)-new Date(a.created_at||0);
       });
       if(resultCount){
         if(query){resultCount.style.display="block";resultCount.textContent=filtered.length?"تم العثور على "+filtered.length+" منتج":"لا توجد نتائج مطابقة للبحث";}
@@ -995,7 +1040,7 @@
         if(typeof window.ozziGetSupabase!=="function")throw new Error("لم يتم تجهيز اتصال Supabase بعد.");
         const sb=window.ozziGetSupabase();
         const result=await Promise.race([
-          sb.from("products").select("id,name,name_ar,name_en,category,price,original_price,image_url,stock,country_code,active,seller_id,seller_name").eq("country_code",country).eq("active",true).order("created_at",{ascending:false}),
+          sb.from("products").select("id,name,name_ar,name_en,category,price,original_price,image_url,stock,country_code,active,seller_id,seller_name,created_at").eq("country_code",country).eq("active",true).order("created_at",{ascending:false}),
           new Promise((_,reject)=>setTimeout(()=>reject(new Error("انتهت مهلة الاتصال بقاعدة البيانات.")),10000))
         ]);
         const {data,error}=result;
@@ -1003,6 +1048,8 @@
         allProducts=(data||[]).filter(p=>Number(p.stock||0)>0);
         activeSearch="";
         const input=document.getElementById("productSearch"),clear=document.getElementById("searchClear");
+        populateCategoryFilter();
+        ["categoryFilter","priceFilter","discountFilter","sortProducts"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=id==="sortProducts"?"newest":"";});
         if(input)input.value="";
         if(clear)clear.classList.remove("show");
         renderProducts();
@@ -1010,6 +1057,25 @@
         console.error("OZZI PRODUCTS ERROR:",error);
         grid.innerHTML='<div class="product-empty">تعذر تحميل المنتجات: '+escapeHtml(error.message||"خطأ غير معروف")+'</div>';
       }
+    }
+
+    function populateCategoryFilter(){
+      const select=document.getElementById("categoryFilter");
+      if(!select)return;
+      const current=select.value;
+      const categories=[...new Set(allProducts.map(p=>String(p.category||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
+      select.innerHTML='<option value="">كل التصنيفات</option>'+categories.map(cat=>'<option value="'+escapeHtml(cat)+'">'+escapeHtml(cat)+'</option>').join("");
+      if(categories.includes(current))select.value=current;
+    }
+
+    function setupProductFilters(){
+      const ids=["categoryFilter","priceFilter","discountFilter","sortProducts"];
+      ids.forEach(id=>{
+        const el=document.getElementById(id);
+        if(!el||el.dataset.bound==="1")return;
+        el.dataset.bound="1";
+        el.addEventListener("change",renderProducts);
+      });
     }
 
     function setupProductSearch(){
@@ -1051,7 +1117,7 @@
     countrySelect.addEventListener("change",updateCountry);
     window.addEventListener("ozzi:country-changed",event=>{const country=event.detail;if(country&&currencies[country]){countrySelect.value=country;updateCountry();}});
     const savedCountry=localStorage.getItem("ozzi_country");if(savedCountry&&currencies[savedCountry])countrySelect.value=savedCountry;
-    document.addEventListener("DOMContentLoaded",()=>{setupProductSearch();updateCountry();updateCartCount();});
+    document.addEventListener("DOMContentLoaded",()=>{setupProductSearch();setupProductFilters();updateCountry();updateCartCount();});
     window.addEventListener("ozzi:cart-updated",updateCartCount);
   </script>
 
