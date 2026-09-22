@@ -1015,7 +1015,7 @@
       });
     }
     function updateCartCount(){const count=window.ozziCart?window.ozziCart.cartCount():0;const el=document.getElementById("cartCount");if(el)el.textContent=count;}
-    function updateCountry(){const country=getSelectedCountry();localStorage.setItem("ozzi_country",country);loadFeaturedProducts(country);loadProducts(country);}
+    function updateCountry(){const country=getSelectedCountry();localStorage.setItem("ozzi_country",country);loadSpecialOffers(country);loadFeaturedProducts(country);loadProducts(country);}
     countrySelect.addEventListener("change",updateCountry);
     window.addEventListener("ozzi:country-changed",event=>{const country=event.detail;if(country&&currencies[country]){countrySelect.value=country;updateCountry();}});
     const savedCountry=localStorage.getItem("ozzi_country");if(savedCountry&&currencies[savedCountry])countrySelect.value=savedCountry;
