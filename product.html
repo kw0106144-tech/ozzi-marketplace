@@ -32,7 +32,7 @@ main{padding:35px 0}.product-page{display:grid;grid-template-columns:1fr 1fr;gap
 <div class="info">
 <div id="category" class="category"></div><h1 id="title" class="title"></h1><div id="discount"></div><div id="price" class="price"></div><div id="oldPrice" class="old"></div><div id="description" class="desc"></div>
 <div class="qty"><button id="minus" type="button">−</button><span id="qty">1</span><button id="plus" type="button">+</button></div>
-<button id="buy" class="buy" type="button"><span class="buy-cart-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="20" r="1.6" fill="currentColor"/><circle cx="18" cy="20" r="1.6" fill="currentColor"/></svg></span>أضف للسلة</button><button id="buyNow" class="buy buy-now" type="button">شراء الآن</button><div class="product-actions"><button id="shareProduct" class="share-btn" type="button"><svg viewBox="0 0 24 24" fill="none"><circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2"/><path d="M8.7 10.7l6.6-3.9M8.7 13.3l6.6 3.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>مشاركة المنتج</button><button id="copyProduct" class="share-btn" type="button"><svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2"/></svg>نسخ الرابط</button></div><div id="message" class="message"></div>
+<button id="buy" class="buy" type="button"><span class="buy-cart-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="20" r="1.6" fill="currentColor"/><circle cx="18" cy="20" r="1.6" fill="currentColor"/></svg></span>أضف للسلة</button><button id="buyNow" class="buy buy-now" type="button">شراء الآن</button><div class="product-actions"><button id="favoriteProduct" class="share-btn" type="button">♡ إضافة للمفضلة</button><button id="shareProduct" class="share-btn" type="button"><svg viewBox="0 0 24 24" fill="none"><circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2"/><path d="M8.7 10.7l6.6-3.9M8.7 13.3l6.6 3.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>مشاركة المنتج</button><button id="copyProduct" class="share-btn" type="button"><svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2"/></svg>نسخ الرابط</button></div><div id="message" class="message"></div>
 </div></section>
 <section id="similarSection" class="similar-section" style="display:none">
 <div class="similar-head"><h2>منتجات مشابهة</h2><p>منتجات هتعجبك</p></div>
@@ -40,7 +40,7 @@ main{padding:35px 0}.product-page{display:grid;grid-template-columns:1fr 1fr;gap
 </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script><script src="js/auth.js"></script><script src="js/cart.js"></script>
+<script src="js/config.js"></script><script src="js/auth.js"></script><script src="js/favorites.js"></script><script src="js/cart.js"></script>
 <script>
 (async function(){
 const id=new URLSearchParams(location.search).get("id");
@@ -74,6 +74,7 @@ const main=document.getElementById("mainImage"),thumbs=document.getElementById("
 function setImage(src,index){main.innerHTML=src?'<img src="'+esc(src)+'" alt="'+esc(name)+'">':'<span style="font-size:70px">🛍️</span>';thumbs.querySelectorAll(".thumb").forEach((x,i)=>x.classList.toggle("active",i===index));}
 thumbs.innerHTML=images.map((src,i)=>'<button class="thumb '+(i===0?"active":"")+'" type="button" data-i="'+i+'"><img src="'+esc(src)+'" alt=""></button>').join("");
 thumbs.querySelectorAll(".thumb").forEach(b=>b.onclick=()=>setImage(images[Number(b.dataset.i)],Number(b.dataset.i)));setImage(images[0]||"",0);
+async function setupFavorite(){const btn=document.getElementById("favoriteProduct");if(!btn)return;try{await window.ozziFavorites.load();const sync=()=>{const saved=window.ozziFavorites.has(p.id);btn.textContent=saved?"♥ إزالة من المفضلة":"♡ إضافة للمفضلة";};sync();btn.onclick=async()=>{try{await window.ozziFavorites.toggle(p.id);sync();document.getElementById("message").textContent="تم تحديث المفضلة ❤️";}catch(e){if(e.message==="LOGIN_REQUIRED")location.href="login.html";else document.getElementById("message").textContent="تعذر تحديث المفضلة.";}}}catch(e){console.error("Favorites error:",e)}}
 async function loadSimilarProducts(){
 const section=document.getElementById("similarSection"),grid=document.getElementById("similarGrid");
 try{
@@ -87,7 +88,7 @@ document.getElementById("buy").onclick=()=>{addCurrentToCart();document.getEleme
 document.getElementById("buyNow").onclick=()=>{addCurrentToCart();window.location.href="cart.html";};
 document.getElementById("shareProduct").onclick=async()=>{const url=location.href;try{if(navigator.share){await navigator.share({title:name,text:"شوف المنتج ده على OZZI",url});}else{await navigator.clipboard.writeText(url);document.getElementById("message").style.display="block";document.getElementById("message").textContent="تم نسخ رابط المنتج";}}catch(err){if(err.name!=="AbortError")console.error(err);}};
 document.getElementById("copyProduct").onclick=async()=>{try{await navigator.clipboard.writeText(location.href);document.getElementById("message").style.display="block";document.getElementById("message").textContent="تم نسخ رابط المنتج";}catch(err){console.error(err);}};
-loading.style.display="none";page.style.display="grid";updateCartCount();loadSimilarProducts();window.addEventListener("ozzi:cart-updated",updateCartCount);
+loading.style.display="none";page.style.display="grid";updateCartCount();loadSimilarProducts();setupFavorite();window.addEventListener("ozzi:cart-updated",updateCartCount);
 }catch(e){console.error(e);loading.style.display="none";errorBox.style.display="block";errorBox.textContent=e.message||"تعذر تحميل المنتج.";}
 })();
 </script>
