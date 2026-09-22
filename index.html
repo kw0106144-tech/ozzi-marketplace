@@ -799,6 +799,8 @@
       </div>
     </section>
 
+    <section id="specialOffers" class="container section"><div class="section-head"><div><h2>🔥 عروض OZZI الخاصة</h2><p>عروض مختارة لفترة محدودة</p></div></div><div id="specialOffersGrid" class="products"><div class="product-loading">جاري تحميل عروض OZZI الخاصة...</div></div></section>
+
     <section id="featured" class="container section">
       <div class="section-head">
         <div><h2>منتجات مميزة</h2><p>اختيارات مميزة من OZZI</p></div>
@@ -921,6 +923,8 @@
         (hasDiscount?'<div class="old-price">'+formatPrice(product.original_price,symbol)+'</div>':'')+
         '</div><button class="buy" type="button">أضف للسلة</button></div></div></article>';
     }
+
+    async function loadSpecialOffers(country){const grid=document.getElementById("specialOffersGrid");if(!grid)return;try{const sb=window.ozziGetSupabase();const {data,error}=await sb.from("products").select("id,name,name_ar,name_en,category,price,original_price,image_url,stock,country_code,active,ozzi_special_offer").eq("country_code",country).eq("active",true).eq("ozzi_special_offer",true).gt("stock",0).order("created_at",{ascending:false}).limit(8);if(error)throw error;const products=data||[];if(!products.length){grid.innerHTML='<div class="product-empty">لا توجد عروض OZZI خاصة حاليًا.</div>';return;}grid.innerHTML=products.map(productCard).join("");bindCartButtonsForGrid("specialOffersGrid");}catch(error){console.error("OZZI SPECIAL OFFERS ERROR:",error);grid.innerHTML='<div class="product-empty">تعذر تحميل عروض OZZI الخاصة.</div>';}}
 
     async function loadFeaturedProducts(country){
       const grid=document.getElementById("featuredProductsGrid");
