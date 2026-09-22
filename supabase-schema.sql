@@ -71,6 +71,9 @@ create table if not exists public.products (
 );
 
 -- Compatibility with older OZZI product tables.
+alter table public.products add column if not exists name_ar text;
+update public.products set name_ar = name where name_ar is null;
+alter table public.products alter column name_ar set not null;
 alter table public.products add column if not exists price numeric(12,2) default 0;
 alter table public.products add column if not exists country_code text default 'EG';
 alter table public.products alter column price set default 0;
