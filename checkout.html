@@ -142,8 +142,9 @@
 
       const shippingCost = 0;
 
+      const currencySymbols = {EG:"ج.م",SA:"ر.س",AE:"د.إ",IQ:"ع.ع",OM:"ر.ع"};
       function money(value) {
-        return new Intl.NumberFormat("ar-EG").format(value) + " ج.م";
+        return new Intl.NumberFormat("ar-EG").format(Math.round(Number(value)||0)) + " " + (currencySymbols[countryCode] || "ج.م");
       }
 
       function setMessage(text, type) {
