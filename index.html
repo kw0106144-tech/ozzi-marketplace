@@ -556,22 +556,33 @@
       line-height: 1;
     }
 
+    .cart-svg {
+      width: 27px;
+      height: 27px;
+      display: block;
+      color: currentColor;
+    }
+
     .user-country-flag {
-      width: 48px;
-      height: 40px;
+      width: 50px;
+      height: 38px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 30px;
-      line-height: 1;
-      border-radius: 10px;
-      background: rgba(255,255,255,.1);
-      border: 1px solid rgba(255,255,255,.25);
-      box-shadow: 0 5px 16px rgba(0,0,0,.18);
+      border-radius: 8px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.3);
+      box-shadow: 0 5px 16px rgba(0,0,0,.2);
       cursor: default;
       user-select: none;
-      font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+      overflow: hidden;
       flex: 0 0 auto;
+    }
+
+    .user-country-flag svg {
+      width: 42px;
+      height: 28px;
+      display: block;
     }
 
     .profile-icon {
@@ -621,10 +632,19 @@
         font-size: 11px;
       }
 
+      .cart-svg {
+        width: 24px;
+        height: 24px;
+      }
+
       .user-country-flag {
-        width: 42px;
-        height: 38px;
-        font-size: 26px;
+        width: 44px;
+        height: 34px;
+      }
+
+      .user-country-flag svg {
+        width: 38px;
+        height: 25px;
       }
 
       .hero {
@@ -674,7 +694,7 @@
 
       <div class="nav-actions">
         <a class="btn btn-outline cart-link cart-icon-btn" href="cart.html" aria-label="سلة التسوق" title="السلة">
-          <span aria-hidden="true">🛒</span>
+          <svg class="cart-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="20" r="1.6" fill="currentColor"/><circle cx="18" cy="20" r="1.6" fill="currentColor"/></svg>
           <span id="cartCount" class="cart-count">0</span>
         </a>
         <a class="btn btn-outline" href="orders.html" data-auth="account">📦 طلباتي</a>
