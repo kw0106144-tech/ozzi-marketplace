@@ -596,6 +596,7 @@
       </a>
 
       <div class="nav-actions">
+        <a class="btn btn-outline cart-link" href="cart.html" aria-label="سلة التسوق">🛒 السلة <span id="cartCount" class="cart-count">0</span></a>
         <a class="btn btn-outline" href="login.html" data-auth="login">تسجيل الدخول</a>
         <a class="btn btn-primary" href="register.html" data-auth="register">إنشاء حساب</a>
 
@@ -814,6 +815,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/cart.js"></script>
 
   <script>
     const countrySelect = document.getElementById("countrySelect");
@@ -869,6 +871,54 @@
 <script>
 // Authentication UI is initialized centrally by js/auth.js.
 // Avoid creating a second Supabase client or referencing the old supabaseClient variable.
+</script>
+
+<script>
+(function () {
+  function getProductData(card) {
+    const title = card.querySelector("h3")?.textContent?.trim() || "منتج";
+    const category = card.querySelector(".product-category")?.textContent?.trim() || "";
+    const priceEl = card.querySelector(".price");
+    const price = Number(priceEl?.dataset.egp || 0);
+    const image = card.querySelector(".product-image img")?.src || "";
+    const emoji = card.querySelector(".product-image")?.textContent?.trim() || "🛍️";
+    const id = card.dataset.productId || title.toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/gi, "-");
+    return { id, name: title, category, price, image, emoji };
+  }
+
+  function updateCartCount() {
+    const count = window.ozziCart ? window.ozziCart.cartCount() : 0;
+    const el = document.getElementById("cartCount");
+    if (el) el.textContent = count;
+  }
+
+  function bindCartButtons() {
+    document.querySelectorAll(".product").forEach((card, index) => {
+      const button = card.querySelector(".buy, button");
+      if (!button || button.dataset.cartBound === "1") return;
+      if (!card.dataset.productId) card.dataset.productId = "ozzi-product-" + (index + 1);
+      button.dataset.cartBound = "1";
+      button.addEventListener("click", function (event) {
+        event.preventDefault();
+        const product = getProductData(card);
+        if (!product.price) {
+          if (typeof showToast === "function") showToast("سعر المنتج غير متاح حاليًا.");
+          return;
+        }
+        window.ozziCart.addToCart(product);
+        updateCartCount();
+        if (typeof showToast === "function") showToast("تمت إضافة المنتج إلى السلة 🛒");
+      });
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    bindCartButtons();
+    updateCartCount();
+  });
+
+  window.addEventListener("ozzi:cart-updated", updateCartCount);
+})();
 </script>
 </body>
 </html>
