@@ -598,6 +598,14 @@
     .price-wrap{display:grid;gap:2px}
     .old-price{color:#8A9AA2;font-size:12px;text-decoration:line-through;font-weight:700}
     .product-loading,.product-empty{grid-column:1/-1;background:#fff;border:1px dashed var(--ozzi-border);border-radius:18px;padding:35px;text-align:center;color:var(--ozzi-muted)}
+    .product-search{display:flex;align-items:center;gap:10px;margin:0 0 22px;padding:12px;background:#fff;border:1px solid var(--ozzi-border);border-radius:16px;box-shadow:0 5px 20px rgba(7,25,35,.035)}
+    .product-search-icon{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:11px;background:var(--ozzi-soft);color:var(--ozzi-primary-dark)}
+    .product-search-icon svg{width:21px;height:21px}
+    .product-search input{width:100%;border:0;outline:0;background:transparent;color:var(--ozzi-text);font-weight:800;font-size:15px}
+    .product-search input::placeholder{color:#8A9AA2}
+    .search-clear{border:0;background:#EEF4F6;color:var(--ozzi-muted);width:36px;height:36px;border-radius:10px;cursor:pointer;font-weight:900;display:none;flex:0 0 36px}
+    .search-clear.show{display:grid;place-items:center}
+    .search-result-count{color:var(--ozzi-muted);font-size:13px;margin:-10px 0 18px;font-weight:700}
 
     /* Responsive */
     @media (max-width: 950px) {
@@ -817,6 +825,14 @@
           <p id="productsSubtitle">المنتجات المتاحة في الدولة المختارة</p>
         </div>
       </div>
+      <div class="product-search" role="search" aria-label="البحث عن المنتجات">
+        <span class="product-search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"/><path d="M16 16l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <input id="productSearch" type="search" placeholder="ابحث عن منتج أو تصنيف..." autocomplete="off" aria-label="ابحث عن منتج أو تصنيف">
+        <button id="searchClear" class="search-clear" type="button" aria-label="مسح البحث">×</button>
+      </div>
+      <div id="searchResultCount" class="search-result-count" style="display:none"></div>
       <div id="productsGrid" class="products">
         <div class="product-loading">جاري تحميل المنتجات...</div>
       </div>
@@ -946,46 +962,62 @@
       }
     }
 
+    let allProducts=[];
+    let activeSearch="";
+
+    function renderProducts(){
+      const grid=document.getElementById("productsGrid");
+      const resultCount=document.getElementById("searchResultCount");
+      const query=activeSearch.trim().toLocaleLowerCase("ar");
+      if(!grid)return;
+      const filtered=allProducts.filter(product=>{
+        if(!query)return true;
+        const haystack=[product.name,product.name_ar,product.name_en,product.category].filter(Boolean).join(" ").toLocaleLowerCase("ar");
+        return haystack.includes(query);
+      });
+      if(resultCount){
+        if(query){resultCount.style.display="block";resultCount.textContent=filtered.length?"تم العثور على "+filtered.length+" منتج":"لا توجد نتائج مطابقة للبحث";}
+        else resultCount.style.display="none";
+      }
+      if(!filtered.length){grid.innerHTML='<div class="product-empty">'+(query?'لا توجد منتجات مطابقة للبحث.':'لا توجد منتجات متاحة حاليًا في هذه الدولة.')+'</div>';return;}
+      grid.innerHTML=filtered.map(productCard).join("");
+      bindCartButtons();
+    }
+
     async function loadProducts(country){
       const grid=document.getElementById("productsGrid");
       const subtitle=document.getElementById("productsSubtitle");
       const countryNames={EG:"مصر",SA:"السعودية",AE:"الإمارات",IQ:"العراق",OM:"سلطنة عُمان"};
       if(!grid)return;
-
       grid.innerHTML='<div class="product-loading">جاري تحميل المنتجات...</div>';
       if(subtitle)subtitle.textContent="المنتجات المتاحة في "+(countryNames[country]||country);
-
       try{
-        if(typeof window.ozziGetSupabase!=="function"){
-          throw new Error("لم يتم تجهيز اتصال Supabase بعد.");
-        }
-
+        if(typeof window.ozziGetSupabase!=="function")throw new Error("لم يتم تجهيز اتصال Supabase بعد.");
         const sb=window.ozziGetSupabase();
         const result=await Promise.race([
-          sb.from("products")
-            .select("id,name,name_ar,name_en,category,price,original_price,image_url,stock,country_code,active,seller_id,seller_name")
-            .eq("country_code",country)
-            .eq("active",true)
-            .order("created_at",{ascending:false}),
+          sb.from("products").select("id,name,name_ar,name_en,category,price,original_price,image_url,stock,country_code,active,seller_id,seller_name").eq("country_code",country).eq("active",true).order("created_at",{ascending:false}),
           new Promise((_,reject)=>setTimeout(()=>reject(new Error("انتهت مهلة الاتصال بقاعدة البيانات.")),10000))
         ]);
-
         const {data,error}=result;
         if(error)throw error;
-
-        const products=(data||[]).filter(p=>Number(p.stock||0)>0);
-
-        if(!products.length){
-          grid.innerHTML='<div class="product-empty">لا توجد منتجات متاحة حاليًا في هذه الدولة.</div>';
-          return;
-        }
-
-        grid.innerHTML=products.map(productCard).join("");
-        bindCartButtons();
+        allProducts=(data||[]).filter(p=>Number(p.stock||0)>0);
+        activeSearch="";
+        const input=document.getElementById("productSearch"),clear=document.getElementById("searchClear");
+        if(input)input.value="";
+        if(clear)clear.classList.remove("show");
+        renderProducts();
       }catch(error){
         console.error("OZZI PRODUCTS ERROR:",error);
         grid.innerHTML='<div class="product-empty">تعذر تحميل المنتجات: '+escapeHtml(error.message||"خطأ غير معروف")+'</div>';
       }
+    }
+
+    function setupProductSearch(){
+      const input=document.getElementById("productSearch"),clear=document.getElementById("searchClear");
+      if(!input||input.dataset.bound==="1")return;
+      input.dataset.bound="1";
+      input.addEventListener("input",()=>{activeSearch=input.value;if(clear)clear.classList.toggle("show",!!input.value.trim());renderProducts();});
+      clear?.addEventListener("click",()=>{input.value="";activeSearch="";clear.classList.remove("show");renderProducts();input.focus();});
     }
 
     function getProductData(card){
@@ -1019,7 +1051,7 @@
     countrySelect.addEventListener("change",updateCountry);
     window.addEventListener("ozzi:country-changed",event=>{const country=event.detail;if(country&&currencies[country]){countrySelect.value=country;updateCountry();}});
     const savedCountry=localStorage.getItem("ozzi_country");if(savedCountry&&currencies[savedCountry])countrySelect.value=savedCountry;
-    document.addEventListener("DOMContentLoaded",()=>{updateCountry();updateCartCount();});
+    document.addEventListener("DOMContentLoaded",()=>{setupProductSearch();updateCountry();updateCartCount();});
     window.addEventListener("ozzi:cart-updated",updateCartCount);
   </script>
 
