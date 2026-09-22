@@ -67,14 +67,8 @@
               <input id="phone" type="tel" required>
             </div>
             <div>
-              <label for="country">الدولة</label>
-              <select id="country" required>
-                <option value="EG">مصر</option>
-                <option value="SA">السعودية</option>
-                <option value="AE">الإمارات</option>
-                <option value="IQ">العراق</option>
-                <option value="OM">سلطنة عُمان</option>
-              </select>
+              <label>الدولة</label>
+              <div id="accountCountry" class="account-country" aria-live="polite">جاري تحديد الدولة...</div>
             </div>
             <div>
               <label for="address">العنوان بالتفصيل</label>
@@ -121,6 +115,15 @@
       const form = document.getElementById("checkoutForm");
       const message = document.getElementById("checkoutMessage");
       const submit = document.getElementById("submitOrder");
+      const accountCountry = document.getElementById("accountCountry");
+
+      const countries = {
+        EG: "مصر",
+        SA: "السعودية",
+        AE: "الإمارات",
+        IQ: "العراق",
+        OM: "سلطنة عُمان"
+      };
 
       function money(value) {
         return new Intl.NumberFormat("ar-EG").format(value) + " ج.م";
@@ -142,10 +145,16 @@
 
         const user = data.session.user;
         const meta = user.user_metadata || {};
+        const countryCode = String(meta.country_code || "").toUpperCase();
+        const countryName = countries[countryCode];
+
+        if (!countryName) {
+          throw new Error("لا توجد دولة مرتبطة بهذا الحساب. يرجى تحديث بيانات الحساب.");
+        }
 
         document.getElementById("fullName").value = meta.full_name || "";
         document.getElementById("phone").value = meta.phone || "";
-        document.getElementById("country").value = meta.country_code || "EG";
+        accountCountry.textContent = countryName;
 
         const cart = window.ozziCart.getCart();
 
@@ -189,13 +198,11 @@
           try {
             const name = document.getElementById("fullName").value.trim();
             const phone = document.getElementById("phone").value.trim();
-            const countryCode = document.getElementById("country").value;
-            const countryName = document.getElementById("country").selectedOptions[0].textContent;
             const address = document.getElementById("address").value.trim();
             const notes = document.getElementById("notes").value.trim();
             const paymentMethod = document.getElementById("payment").value;
 
-            if (!name || !phone || !countryCode || !address) {
+            if (!name || !phone || !address) {
               throw new Error("من فضلك أكمل بيانات التوصيل.");
             }
 
