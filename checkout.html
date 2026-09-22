@@ -19,14 +19,17 @@
     .checkout-summary-item .info{flex:1}
     .checkout-summary-item .name{font-weight:700}
     .checkout-summary-item .meta{font-size:13px;color:#777;margin-top:4px}
-    .checkout-total{display:flex;justify-content:space-between;font-size:20px;font-weight:800;margin-top:18px}
+    .checkout-subtotal,.checkout-shipping,.checkout-total{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+    .checkout-shipping{color:#067647;font-weight:700}
+    .checkout-shipping .free-badge{font-size:13px;background:#effcf6;padding:5px 9px;border-radius:8px}
+    .checkout-total{font-size:20px;font-weight:800;padding-top:14px;border-top:1px solid #eee}
     .checkout-submit{width:100%;margin-top:18px;padding:15px;border:0;border-radius:14px;cursor:pointer;font:inherit;font-weight:800;background:#111;color:#fff}
     .checkout-submit:disabled{opacity:.6;cursor:not-allowed}
     .checkout-message{margin-top:14px;padding:12px;border-radius:10px;display:none}
     .checkout-message.error{display:block;background:#fff1f1;color:#b42318}
     .checkout-message.success{display:block;background:#effcf6;color:#067647}
     .empty-checkout{text-align:center;padding:50px 20px}
-    .order-number{font-weight:900}
+    .account-country{padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#f7f7f7;color:#555;font-weight:700}
     @media(max-width:800px){.checkout-grid{grid-template-columns:1fr}.checkout-page{margin:20px auto}}
   </style>
 </head>
@@ -92,8 +95,19 @@
         <aside class="checkout-card">
           <h2>ملخص الطلب</h2>
           <div id="summaryItems"></div>
+
+          <div class="checkout-subtotal">
+            <span>قيمة المنتجات</span>
+            <strong id="summarySubtotal">0 ج.م</strong>
+          </div>
+
+          <div class="checkout-shipping">
+            <span>الشحن</span>
+            <span class="free-badge">مجاني لفترة محدودة</span>
+          </div>
+
           <div class="checkout-total">
-            <span>الإجمالي</span>
+            <span>الإجمالي النهائي</span>
             <span id="summaryTotal">0 ج.م</span>
           </div>
         </aside>
@@ -111,6 +125,7 @@
       const empty = document.getElementById("emptyState");
       const content = document.getElementById("checkoutContent");
       const itemsBox = document.getElementById("summaryItems");
+      const subtotalBox = document.getElementById("summarySubtotal");
       const totalBox = document.getElementById("summaryTotal");
       const form = document.getElementById("checkoutForm");
       const message = document.getElementById("checkoutMessage");
@@ -124,6 +139,8 @@
         IQ: "العراق",
         OM: "سلطنة عُمان"
       };
+
+      const shippingCost = 0;
 
       function money(value) {
         return new Intl.NumberFormat("ar-EG").format(value) + " ج.م";
@@ -164,12 +181,12 @@
           return;
         }
 
-        let total = 0;
+        let subtotal = 0;
 
         itemsBox.innerHTML = cart.map(item => {
           const price = Number(item.price || 0);
           const qty = Number(item.quantity || 1);
-          total += price * qty;
+          subtotal += price * qty;
 
           return `
             <div class="checkout-summary-item">
@@ -183,6 +200,9 @@
           `;
         }).join("");
 
+        const total = subtotal + shippingCost;
+
+        subtotalBox.textContent = money(subtotal);
         totalBox.textContent = money(total);
         loading.style.display = "none";
         content.style.display = "block";
@@ -257,7 +277,9 @@
               "العنوان: " + address + "\n" +
               (notes ? "ملاحظات: " + notes + "\n" : "") +
               "\nالمنتجات:\n" + lines.join("\n") +
-              "\n\nالإجمالي: " + money(total) +
+              "\n\nقيمة المنتجات: " + money(subtotal) +
+              "\nالشحن: مجاني لفترة محدودة" +
+              "\nالإجمالي النهائي: " + money(total) +
               "\nطريقة الدفع: الدفع عند الاستلام";
 
             localStorage.setItem("ozzi_last_order", JSON.stringify({
@@ -269,6 +291,8 @@
               country_code: countryCode,
               address,
               notes,
+              subtotal,
+              shipping_cost: shippingCost,
               total,
               items: cart,
               created_at: new Date().toISOString()
