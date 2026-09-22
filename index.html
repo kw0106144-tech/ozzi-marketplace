@@ -1055,7 +1055,7 @@
       }
       if(!filtered.length){grid.innerHTML='<div class="product-empty">'+(query?'لا توجد منتجات مطابقة للبحث.':'لا توجد منتجات متاحة حاليًا في هذه الدولة.')+'</div>';return;}
       grid.innerHTML=filtered.map(productCard).join("");
-      bindCartButtons();
+      bindCartButtons();bindFavoriteButtons();
     }
 
     async function loadProducts(country){
