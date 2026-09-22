@@ -519,6 +519,36 @@
       white-space: nowrap;
     }
 
+    .cart-icon-btn {
+      width: 48px;
+      min-width: 48px;
+      height: 44px;
+      padding: 0;
+      position: relative;
+      font-size: 20px;
+    }
+
+    .cart-icon-btn .cart-count {
+      position: absolute;
+      top: -6px;
+      left: -6px;
+    }
+
+    .user-country-flag {
+      width: 40px;
+      height: 40px;
+      display: inline-grid;
+      place-items: center;
+      font-size: 25px;
+      line-height: 1;
+      border-radius: 50%;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 5px 16px rgba(0,0,0,.12);
+      cursor: default;
+      user-select: none;
+    }
+
     .profile-icon {
       font-size: 17px;
       line-height: 1;
@@ -548,6 +578,20 @@
       .nav-actions .btn {
         padding: 9px 11px;
         font-size: 12px;
+      }
+
+      .nav-actions .cart-icon-btn {
+        width: 40px;
+        min-width: 40px;
+        height: 40px;
+        padding: 0;
+        font-size: 18px;
+      }
+
+      .user-country-flag {
+        width: 36px;
+        height: 36px;
+        font-size: 22px;
       }
 
       .hero {
@@ -596,10 +640,15 @@
       </a>
 
       <div class="nav-actions">
-        <a class="btn btn-outline cart-link" href="cart.html" aria-label="سلة التسوق">🛒 السلة <span id="cartCount" class="cart-count">0</span></a>
+        <a class="btn btn-outline cart-link cart-icon-btn" href="cart.html" aria-label="سلة التسوق" title="السلة">
+          <span aria-hidden="true">🛒</span>
+          <span id="cartCount" class="cart-count">0</span>
+        </a>
         <a class="btn btn-outline" href="orders.html" data-auth="account">📦 طلباتي</a>
         <a class="btn btn-outline" href="login.html" data-auth="login">تسجيل الدخول</a>
         <a class="btn btn-primary" href="register.html" data-auth="register">إنشاء حساب</a>
+
+        <span id="userCountryFlag" class="user-country-flag" data-auth="account" style="display: none;" aria-label="دولة الحساب" title="دولة الحساب"></span>
 
         <a class="btn btn-primary profile-btn" href="profile.html" data-auth="account" style="display: none;" aria-label="الملف الشخصي">
           <span class="profile-icon" aria-hidden="true">👤</span>
@@ -647,7 +696,7 @@
       </div>
     </section>
 
-    <section class="container country-section">
+    <section id="countrySection" class="container country-section">
       <div class="country-box">
 
         <div class="country-info">
