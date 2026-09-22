@@ -62,12 +62,27 @@ create table if not exists public.products (
   category text not null default 'عام',
   sku text unique,
   image_url text,
+  price numeric(12,2) not null default 0 check (price >= 0),
+  country_code text not null default 'EG' check (country_code in ('EG','SA','AE','IQ','OM')),
   stock integer not null default 0 check (stock >= 0),
   active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
+-- Compatibility with older OZZI product tables.
+alter table public.products add column if not exists price numeric(12,2) default 0;
+alter table public.products add column if not exists country_code text default 'EG';
+alter table public.products alter column price set default 0;
+alter table public.products alter column country_code set default 'EG';
+alter table public.products alter column country_code set not null;
+alter table public.products alter column price set not null;
+-- Legacy marketplace columns are no longer required for OZZI single-store products.
+alter table public.products alter column seller_id drop not null;
+alter table public.products alter column country_id drop not null;
+
+
+-- Legacy product_prices table is kept for backward compatibility; new products use products.price + products.country_code.
 -- Country-specific product prices and availability.
 create table if not exists public.product_prices (
   id uuid primary key default gen_random_uuid(),
