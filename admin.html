@@ -77,7 +77,7 @@ async function loadCustomers(){
 }
 async function loadDashboardInsights(){
   const [itemsRes,ordersRes,productsRes]=await Promise.all([
-    sb.from("order_items").select("product_name,product_id,quantity,line_total,order_id"),
+    sb.from("order_items").select("product_name,product_id,quantity,unit_price,order_id"),
     sb.from("orders").select("id,country_code,status,total"),
     sb.from("products").select("id,name,stock,sku,country_code,active").order("stock",{ascending:true})
   ]);
@@ -87,7 +87,7 @@ async function loadDashboardInsights(){
   const orders=ordersRes.data||[], items=itemsRes.data||[];
   const validOrders=new Map(orders.filter(o=>o.status!=="cancelled").map(o=>[o.id,o]));
   const sellerMap={};
-  items.forEach(i=>{if(!validOrders.has(i.order_id))return;const key=i.product_id||i.product_name;sellerMap[key]||(sellerMap[key]={name:i.product_name||"منتج",qty:0,sales:0});sellerMap[key].qty+=Number(i.quantity||0);sellerMap[key].sales+=Number(i.line_total||0)});
+  items.forEach(i=>{if(!validOrders.has(i.order_id))return;const key=i.product_id||i.product_name;sellerMap[key]||(sellerMap[key]={name:i.product_name||"منتج",qty:0,sales:0});sellerMap[key].qty+=Number(i.quantity||0);sellerMap[key].sales+=Number(i.unit_price||0)*Number(i.quantity||0)});
   const best=Object.values(sellerMap).sort((a,b)=>b.qty-a.qty||b.sales-a.sales).slice(0,8);
   document.getElementById("bestSellers").innerHTML=best.length?best.map((p,i)=>'<div class="dashboard-row"><div><strong>#'+(i+1)+' '+esc(p.name)+'</strong><small>'+p.qty+' وحدة مباعة</small></div><span class="dashboard-badge">'+money(p.sales)+'</span></div>').join(""):'<span class="muted">لا توجد مبيعات حتى الآن.</span>';
   const low=(productsRes.data||[]).filter(p=>p.active!==false&&Number(p.stock)<=5).slice(0,10);
@@ -115,7 +115,7 @@ async function loadSellerSales(){
   const [sRes,pRes,iRes,oRes]=await Promise.all([
     sb.from("sellers").select("id,name"),
     sb.from("products").select("id,seller_id,name"),
-    sb.from("order_items").select("product_id,quantity,line_total,order_id"),
+    sb.from("order_items").select("product_id,quantity,unit_price,order_id"),
     sb.from("orders").select("id,status")
   ]);
   if(sRes.error)throw sRes.error;if(pRes.error)throw pRes.error;if(iRes.error)throw iRes.error;if(oRes.error)throw oRes.error;
@@ -126,7 +126,7 @@ async function loadSellerSales(){
     const order=orders.get(item.order_id);if(!order||order.status==="cancelled")return;
     const product=productMap.get(String(item.product_id));if(!product?.seller_id)return;
     const s=stats.get(product.seller_id);if(!s)return;
-    s.products.add(product.id);s.units+=Number(item.quantity||0);s.sales+=Number(item.line_total||0);
+    s.products.add(product.id);s.units+=Number(item.quantity||0);s.sales+=Number(item.unit_price||0)*Number(item.quantity||0);
   });
   const list=[...stats.values()].sort((a,b)=>b.sales-a.sales);
   const el=document.getElementById("sellerStats");
