@@ -183,6 +183,14 @@
 
   async function logoutUser() {
     try {
+      // السلة مرتبطة بجلسة الحساب: امسحها عند تسجيل الخروج
+      // حتى لا تظهر منتجات الحساب السابق للحساب التالي على نفس الجهاز.
+      if (window.ozziCart && typeof window.ozziCart.clearCart === "function") {
+        window.ozziCart.clearCart();
+      } else {
+        localStorage.removeItem("ozzi_cart");
+      }
+
       await getClient().auth.signOut();
     } finally {
       window.location.replace("index.html?auth=" + Date.now());
