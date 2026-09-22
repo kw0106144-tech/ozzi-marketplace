@@ -29,7 +29,6 @@
       const sb = getClient();
       const { data, error } = await sb.auth.getSession();
       if (error) throw error;
-
       const loggedIn = !!data.session;
 
       document.querySelectorAll('[data-auth="login"], [data-auth="register"]').forEach(el => {
@@ -39,8 +38,6 @@
       document.querySelectorAll('[data-auth="account"], [data-auth="logout"]').forEach(el => {
         el.style.setProperty("display", loggedIn ? "inline-flex" : "none", "important");
       });
-
-      console.log("OZZI AUTH SESSION:", loggedIn, data.session?.user?.email || "");
     } catch (err) {
       console.error("OZZI AUTH HEADER ERROR:", err);
     }
@@ -70,8 +67,6 @@
         msg.className = "auth-message success";
       }
 
-      // تأكيد أن الـ session محفوظة قبل الانتقال
-      await getClient().auth.getSession();
       window.location.replace("index.html?auth=" + Date.now());
     } catch (error) {
       console.error("OZZI Login Error:", error);
@@ -87,6 +82,7 @@
 
   async function registerUser(event) {
     event.preventDefault();
+
     const name = document.getElementById("registerName")?.value.trim();
     const phone = document.getElementById("registerPhone")?.value.trim();
     const countryCode = document.getElementById("registerCountry")?.value;
@@ -112,19 +108,21 @@
     if (btn) { btn.disabled = true; btn.textContent = "جاري إنشاء الحساب..."; }
 
     try {
-      const sb = getClient();
-      const { data: country, error: countryError } = await sb
-        .from("countries")
-        .select("id, code")
-        .eq("code", countryCode)
-        .single();
-      if (countryError || !country) throw new Error("الدولة المختارة غير موجودة.");
-
-      const { data, error } = await sb.auth.signUp({
+      // لا نعتمد على جدول countries أثناء التسجيل.
+      // الدولة تُحفظ كـ country_code داخل user_metadata لتجنب فشل التسجيل
+      // بسبب جدول غير موجود أو سياسات RLS على قاعدة البيانات.
+      const { data, error } = await getClient().auth.signUp({
         email,
         password,
-        options: { data: { full_name: name, phone, country_id: country.id } }
+        options: {
+          data: {
+            full_name: name,
+            phone,
+            country_code: countryCode
+          }
+        }
       });
+
       if (error) throw error;
       if (!data.user) throw new Error("تعذر إنشاء الحساب.");
 
@@ -142,7 +140,11 @@
       }
     } catch (error) {
       console.error("OZZI Register Error:", error);
-      if (msg) msg.textContent = error.message || "حدث خطأ أثناء إنشاء الحساب.";
+      let message = error.message || "حدث خطأ أثناء إنشاء الحساب.";
+      if (String(message).toLowerCase().includes("already registered")) {
+        message = "هذا البريد الإلكتروني مسجل بالفعل.";
+      }
+      if (msg) msg.textContent = message;
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = "إنشاء الحساب"; }
     }
@@ -165,6 +167,7 @@
     const lf = document.getElementById("loginForm");
     if (rf) rf.addEventListener("submit", registerUser);
     if (lf) lf.addEventListener("submit", loginUser);
+
     updateHeaderAuth();
 
     try {
