@@ -55,20 +55,33 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const message = document.getElementById("profileMessage");
   const info = document.getElementById("profileInfo");
+
   try {
     const sb = window.ozziGetSupabase();
     const { data, error } = await sb.auth.getSession();
     if (error) throw error;
+
     if (!data.session) {
       window.location.replace("login.html");
       return;
     }
+
     const user = data.session.user;
     const meta = user.user_metadata || {};
+    const countries = {
+      EG: "مصر",
+      SA: "السعودية",
+      AE: "الإمارات",
+      IQ: "العراق",
+      OM: "سلطنة عُمان"
+    };
+
     document.getElementById("profileName").textContent = meta.full_name || "غير محدد";
     document.getElementById("profileEmail").textContent = user.email || "غير محدد";
     document.getElementById("profilePhone").textContent = meta.phone || "غير محدد";
-    document.getElementById("profileCountry").textContent = meta.country_id || "غير محدد";
+    document.getElementById("profileCountry").textContent =
+      countries[meta.country_code] || meta.country_code || "غير محدد";
+
     message.hidden = true;
     info.hidden = false;
   } catch (error) {
