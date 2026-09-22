@@ -260,3 +260,20 @@ create policy "Anyone can view product images"
 on public.product_images for select
 to anon, authenticated
 using (true);
+
+
+-- Favorites / wishlist.
+create table if not exists public.favorites (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  product_id uuid not null references public.products(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, product_id)
+);
+create index if not exists favorites_product_id_idx on public.favorites(product_id);
+alter table public.favorites enable row level security;
+drop policy if exists "Users can view own favorites" on public.favorites;
+create policy "Users can view own favorites" on public.favorites for select to authenticated using (user_id=auth.uid());
+drop policy if exists "Users can add own favorites" on public.favorites;
+create policy "Users can add own favorites" on public.favorites for insert to authenticated with check (user_id=auth.uid());
+drop policy if exists "Users can remove own favorites" on public.favorites;
+create policy "Users can remove own favorites" on public.favorites for delete to authenticated using (user_id=auth.uid());
