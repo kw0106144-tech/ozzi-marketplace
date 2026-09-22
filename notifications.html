@@ -1,13 +1,44 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>الإشعارات | OZZI</title>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/header.css">
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f6f7f9;color:#111827;font-family:Tajawal,Arial,sans-serif}.page{width:min(1180px,calc(100% - 32px));margin:32px auto 60px}.page-title{font-size:32px;font-weight:900;margin:0 0 8px}.page-sub{color:#6b7280;margin:0 0 24px}.panel{background:#fff;border:1px solid #e5e7eb;border-radius:22px;padding:22px;box-shadow:0 10px 35px rgba(0,0,0,.06)}.empty{text-align:center;padding:55px 20px;color:#6b7280}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.card{position:relative;background:#fff;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;box-shadow:0 8px 25px rgba(0,0,0,.05)}.card-main{display:block;color:inherit;text-decoration:none}.card-img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f1f5f9;display:block}.card-info{padding:14px}.card-name{font-weight:900;margin:0 0 8px}.price{font-weight:900;font-size:18px}.old{text-decoration:line-through;color:#9ca3af;font-size:13px;margin-right:6px}.remove{position:absolute;top:10px;left:10px;border:0;border-radius:999px;width:36px;height:36px;background:#fff;color:#d92d20;box-shadow:0 4px 15px rgba(0,0,0,.15);cursor:pointer;font-size:18px;z-index:3}@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.page-title{font-size:27px}}@media(max-width:520px){.page{width:min(100% - 20px,1180px);margin-top:20px}.grid{gap:12px}.panel{padding:14px}.card-info{padding:11px}}
+body{background:#f6f8fa}
+.notifications-page{padding:38px 0 70px}
+.notifications-card{background:#fff;border:1px solid #e6eaee;border-radius:24px;box-shadow:0 12px 35px rgba(0,0,0,.06);overflow:hidden}
+.notifications-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:24px;border-bottom:1px solid #edf0f2}
+.notifications-head h1{margin:0;font-size:28px;font-weight:900;color:#071923}
+.notifications-head p{margin:7px 0 0;color:#69757c;font-size:13px}
+#markAll{border:0;background:#071923;color:#fff;border-radius:12px;padding:11px 16px;font-weight:900;cursor:pointer}
+#markAll:disabled{opacity:.5;cursor:not-allowed}
+#list{padding:10px}
+.notification{display:flex;align-items:flex-start;gap:14px;padding:18px;border-radius:18px;border-bottom:1px solid #f0f2f4;cursor:pointer;transition:.2s}
+.notification:last-child{border-bottom:0}
+.notification:hover{background:#f8fafb}
+.notification.unread{background:#eefaff}
+.notification-icon{width:46px;height:46px;flex:0 0 46px;border-radius:14px;display:grid;place-items:center;background:#071923;color:#fff;font-size:21px}
+.notification-content{min-width:0;flex:1}
+.notification-title{font-weight:900;color:#071923;font-size:15px;margin-bottom:5px}
+.notification-message{color:#5e6b72;font-size:13px;line-height:1.8}
+.notification-time{margin-top:7px;color:#98a1a6;font-size:11px}
+.notification-unread{width:9px;height:9px;flex:0 0 9px;margin-top:8px;border-radius:50%;background:#08a6d5}
+.empty{padding:55px 20px;text-align:center;color:#7b858b}
+.empty-icon{font-size:45px;margin-bottom:10px}
+.error{padding:25px;text-align:center;color:#b42318}
+@media(max-width:650px){
+ .notifications-page{padding:20px 0 45px}
+ .notifications-head{align-items:flex-start;flex-direction:column;padding:18px}
+ .notifications-head h1{font-size:23px}
+ #markAll{width:100%}
+ .notification{padding:15px 10px}
+}
 </style>
-</head><body>
+</head>
+<body>
 <header class="site-header">
     <div class="container nav">
 
@@ -41,9 +72,46 @@
 
     </div>
   </header>
-<main class="page"><div class="panel"><h1 class="page-title">الإشعارات</h1><p class="page-sub">آخر التحديثات الخاصة بحسابك وطلباتك.</p><div id="list" class="empty">جاري تحميل الإشعارات...</div></div></main>
+<main class="container notifications-page">
+<section class="notifications-card">
+<div class="notifications-head">
+<div><h1>🔔 الإشعارات</h1><p>تابع آخر التحديثات الخاصة بطلباتك ومنتجات OZZI.</p></div>
+<button id="markAll" type="button">تحديد الكل كمقروء</button>
+</div>
+<div id="list"><div class="empty"><div class="empty-icon">🔔</div>جاري تحميل الإشعارات...</div></div>
+</section>
+</main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script><script src="js/auth.js"></script><script src="js/cart.js"></script><script>
-document.addEventListener("DOMContentLoaded",async()=>{const list=document.getElementById("list");try{const sb=window.ozziGetSupabase();const {data:s}=await sb.auth.getSession();if(!s.session){list.innerHTML="<div class='empty'>يجب تسجيل الدخول لعرض الإشعارات.</div>";return}const uid=s.session.user.id;const {data,error}=await sb.from("notifications").select("id,type,title,message,is_read,created_at,product_id,order_id").eq("user_id",uid).order("created_at",{ascending:false}).limit(100);if(error)throw error;if(!data?.length){list.innerHTML="<div class='empty'>لا توجد إشعارات حاليًا.</div>";return}list.className="";list.innerHTML=data.map(n=>'<div class="panel" style="margin-bottom:12px;cursor:pointer;'+(n.is_read?"":"border-color:#0ea5e9;background:#f0f9ff")+'" data-id="'+n.id+'"><b>'+String(n.title||"إشعار")+'</b><div style="margin-top:6px;color:#4b5563">'+String(n.message||"")+'</div><small style="display:block;margin-top:8px;color:#9ca3af">'+new Date(n.created_at).toLocaleString("ar-EG")+'</small></div>').join("");list.querySelectorAll("[data-id]").forEach(el=>el.onclick=async()=>{await sb.from("notifications").update({is_read:true}).eq("id",el.dataset.id).eq("user_id",uid);el.style.borderColor="#e5e7eb";el.style.background="#fff";});}catch(e){console.error(e);list.innerHTML="<div class='empty'>حدث خطأ أثناء تحميل الإشعارات.</div>";}});
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded",async()=>{
+ const list=document.getElementById("list"),markAll=document.getElementById("markAll");
+ const sb=window.ozziGetSupabase();
+ const {data,error:sessionError}=await sb.auth.getSession();
+ if(sessionError||!data.session){list.innerHTML='<div class="empty"><div class="empty-icon">🔐</div>يجب تسجيل الدخول لعرض الإشعارات.</div>';markAll.disabled=true;return}
+ const uid=data.session.user.id;
+ const icons={order_status:"📦",discount:"🏷️",product_arrival:"✨"};
+ const labels={order_status:"تحديث الطلب",discount:"خصم جديد",product_arrival:"منتج متاح"};
+ function time(v){return new Intl.DateTimeFormat("ar-EG",{dateStyle:"medium",timeStyle:"short"}).format(new Date(v))}
+ async function countBadge(){
+   const r=await sb.from("notifications").select("id",{count:"exact",head:true}).eq("user_id",uid).eq("is_read",false);
+   document.querySelectorAll("[data-notification-count]").forEach(e=>{e.textContent=r.count||0;e.style.display=r.count?"inline-flex":"none"});
+ }
+ async function load(){
+   const r=await sb.from("notifications").select("id,type,title,message,is_read,created_at,product_id,order_id").eq("user_id",uid).order("created_at",{ascending:false}).limit(100);
+   if(r.error){list.innerHTML='<div class="error">تعذر تحميل الإشعارات. تأكد من تشغيل جدول الإشعارات في Supabase.</div>';return}
+   const rows=r.data||[];
+   if(!rows.length){list.innerHTML='<div class="empty"><div class="empty-icon">🔔</div>لا توجد إشعارات حتى الآن.</div>';await countBadge();return}
+   list.innerHTML=rows.map(x=>'<article class="notification '+(x.is_read?"":"unread")+'" data-id="'+x.id+'"><div class="notification-icon">'+(icons[x.type]||"🔔")+'</div><div class="notification-content"><div class="notification-title">'+(x.title||labels[x.type]||"إشعار")+'</div><div class="notification-message">'+(x.message||"")+'</div><div class="notification-time">'+time(x.created_at)+'</div></div>'+(!x.is_read?'<span class="notification-unread" aria-label="غير مقروء"></span>':"")+'</article>').join("");
+   list.querySelectorAll("[data-id]").forEach(el=>el.addEventListener("click",async()=>{if(!el.classList.contains("unread"))return;const id=el.dataset.id;const r=await sb.from("notifications").update({is_read:true}).eq("id",id).eq("user_id",uid);if(!r.error){el.classList.remove("unread");el.querySelector(".notification-unread")?.remove();await countBadge()}}));
+   await countBadge();
+ }
+ markAll.addEventListener("click",async()=>{markAll.disabled=true;const r=await sb.from("notifications").update({is_read:true}).eq("user_id",uid).eq("is_read",false);markAll.disabled=false;if(!r.error)await load()});
+ load();
+ sb.channel("ozzi-notifications-page-"+uid).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:"user_id=eq."+uid},()=>load()).subscribe();
+});
 </script>
-</body></html>
+</body>
+</html>
