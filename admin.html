@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة تحكم OZZI</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body{background:#f5f7fa}
+    .admin-page{max-width:1250px;margin:30px auto;padding:0 20px}
+    .admin-top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px}
+    .admin-title h1{margin:0 0 6px}.admin-title p{margin:0;color:#777}
+    .admin-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+    .admin-card{background:#fff;border:1px solid #e8e8e8;border-radius:18px;padding:22px;box-shadow:0 8px 25px rgba(0,0,0,.05)}
+    .stat-label{color:#777;font-size:14px}.stat-value{font-size:30px;font-weight:900;margin-top:8px}
+    .section{margin-top:22px}.section h2{margin-bottom:14px}
+    .feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .feature-card{background:#fff;border:1px solid #e8e8e8;border-radius:18px;padding:22px}
+    .feature-card h3{margin-top:0}.feature-card p{color:#777;line-height:1.7}
+    .admin-message{display:none;padding:18px;border-radius:14px;background:#fff1f1;color:#b42318;margin-bottom:20px}
+    .admin-message.show{display:block}
+    @media(max-width:900px){.admin-grid{grid-template-columns:repeat(2,1fr)}.feature-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:600px){.admin-grid,.feature-grid{grid-template-columns:1fr}.admin-top{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav">
+        <a class="logo" href="index.html">OZZI</a>
+        <div class="nav-actions">
+          <a class="btn btn-outline" href="index.html">المتجر</a>
+          <button class="btn btn-outline" type="button" onclick="logoutUser()">تسجيل الخروج</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-page">
+    <div id="adminMessage" class="admin-message"></div>
+
+    <div class="admin-top">
+      <div class="admin-title">
+        <h1>لوحة تحكم OZZI</h1>
+        <p>إدارة المتجر والطلبات والشحن</p>
+      </div>
+    </div>
+
+    <section class="admin-grid">
+      <div class="admin-card"><div class="stat-label">إجمالي الطلبات</div><div class="stat-value" id="ordersCount">—</div></div>
+      <div class="admin-card"><div class="stat-label">طلبات قيد التنفيذ</div><div class="stat-value" id="pendingCount">—</div></div>
+      <div class="admin-card"><div class="stat-label">إجمالي المبيعات</div><div class="stat-value" id="salesTotal">—</div></div>
+      <div class="admin-card"><div class="stat-label">العملاء</div><div class="stat-value" id="customersCount">—</div></div>
+    </section>
+
+    <section class="section">
+      <h2>إدارة المتجر</h2>
+      <div class="feature-grid">
+        <div class="feature-card"><h3>📦 الطلبات</h3><p>عرض الطلبات ومتابعة حالتها وتفاصيل العملاء.</p><a class="btn btn-primary" href="orders.html">فتح الطلبات</a></div>
+        <div class="feature-card"><h3>🚚 الشحن</h3><p>سيتم هنا التحكم في أسعار الشحن لكل دولة وحالة الشحن المجاني.</p></div>
+        <div class="feature-card"><h3>🛍️ المنتجات</h3><p>إدارة المنتجات والأسعار والمخزون لاحقًا من لوحة التحكم.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    (async function(){
+      const message = document.getElementById("adminMessage");
+      function deny(text){ message.textContent=text; message.classList.add("show"); setTimeout(()=>window.location.replace("index.html"),2200); }
+
+      try{
+        const sb=window.ozziGetSupabase();
+        const {data,error}=await sb.auth.getSession();
+        if(error || !data.session){ deny("هذه الصفحة متاحة للمستخدمين المصرح لهم فقط."); return; }
+
+        const user=data.session.user;
+        const meta=user.user_metadata || {};
+
+        // Temporary foundation: admin emails are configured here until
+        // the dedicated admin_roles table is created in the dashboard phase.
+        const adminEmails=[
+          "kw0106144-tech@users.noreply.github.com"
+        ];
+
+        if(!adminEmails.includes(String(user.email||"").toLowerCase())){
+          deny("ليس لديك صلاحية الدخول إلى لوحة التحكم.");
+          return;
+        }
+
+        const {data:orders,error:ordersError}=await sb
+          .from("orders")
+          .select("id,status,total,user_id");
+
+        if(!ordersError && orders){
+          document.getElementById("ordersCount").textContent=orders.length;
+          document.getElementById("pendingCount").textContent=orders.filter(o=>o.status==="pending").length;
+          const sales=orders.reduce((sum,o)=>sum+Number(o.total||0),0);
+          document.getElementById("salesTotal").textContent=new Intl.NumberFormat("ar-EG").format(sales)+" ج.م";
+          document.getElementById("customersCount").textContent=new Set(orders.map(o=>o.user_id).filter(Boolean)).size;
+        }else{
+          document.getElementById("ordersCount").textContent="0";
+          document.getElementById("pendingCount").textContent="0";
+          document.getElementById("salesTotal").textContent="0 ج.م";
+          document.getElementById("customersCount").textContent="0";
+        }
+      }catch(err){
+        console.error("OZZI ADMIN ERROR:",err);
+        deny("حدث خطأ أثناء تحميل لوحة التحكم.");
+      }
+    })();
+  </script>
+</body>
+</html>
