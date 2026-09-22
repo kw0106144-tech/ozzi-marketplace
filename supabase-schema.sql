@@ -73,6 +73,8 @@ create table if not exists public.products (
 -- Compatibility with older OZZI product tables.
 alter table public.products add column if not exists seller_name text;
 alter table public.products add column if not exists original_price numeric(12,2);
+alter table public.products add column if not exists featured boolean not null default false;
+create index if not exists products_featured_idx on public.products(country_code, featured, active);
 update public.products set original_price = null where original_price is not null and original_price <= price;
 alter table public.products add constraint products_original_price_check check (original_price is null or original_price >= price);
 alter table public.products add column if not exists name_ar text;
