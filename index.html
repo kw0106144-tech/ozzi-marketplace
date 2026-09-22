@@ -1116,10 +1116,9 @@
     function getProductData(card){
       const title=card.querySelector("h3")?.textContent?.trim()||"منتج";
       const category=card.querySelector(".product-category")?.textContent?.trim()||"";
-      const priceText=card.querySelector(".price")?.textContent||"0";
-      const price=Number(priceText.replace(/[^0-9.]/g,""))||0;
+      const price=Number(card.dataset.price)||0;
       const image=card.querySelector(".product-image img")?.src||"";
-      const countryCode=getSelectedCountry();
+      const countryCode=card.dataset.countryCode||getSelectedCountry();
       return {id:card.dataset.productId,name:title,category,price,image,currency:currencies[countryCode]?.symbol||"ج.م",country_code:countryCode};
     }
     function bindCartButtonsForGrid(gridId){
