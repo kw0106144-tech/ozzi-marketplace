@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#071923">
+<title>السلة | OZZI</title>
+<style>
+:root{--primary:#1B91B7;--dark:#071923;--text:#10212B;--muted:#607985;--border:#DCEBF0;--bg:#F5FAFC}
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.container{width:min(1050px,calc(100% - 28px));margin:auto}.header{background:var(--dark);color:#fff;padding:18px 0}.nav{display:flex;justify-content:space-between;align-items:center;gap:15px}.logo{font-size:28px;font-weight:900;letter-spacing:2px}.nav a{color:#fff;text-decoration:none}
+main{padding:40px 0}.card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:22px;box-shadow:0 10px 30px rgba(7,25,35,.06)}
+h1{margin:0 0 22px}.item{display:grid;grid-template-columns:90px 1fr auto;gap:16px;align-items:center;padding:15px 0;border-bottom:1px solid var(--border)}.item:last-child{border-bottom:0}
+.thumb{height:80px;border-radius:14px;background:#eef9fc;display:grid;place-items:center;font-size:35px;overflow:hidden}.thumb img{width:100%;height:100%;object-fit:cover}
+.name{font-weight:900}.meta{color:var(--muted);font-size:13px;margin-top:4px}.price{font-weight:900;color:var(--primary);margin-top:8px}
+.qty{display:flex;align-items:center;gap:8px}.qty button{width:32px;height:32px;border:1px solid var(--border);background:#fff;border-radius:8px;cursor:pointer}.qty span{min-width:25px;text-align:center;font-weight:800}
+.remove{margin-top:8px;border:0;background:none;color:#b42318;cursor:pointer;font-weight:700}
+.summary{margin-top:24px;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:20px}.total{font-size:22px;font-weight:900}.actions{display:flex;gap:10px}.btn{border:0;border-radius:11px;padding:12px 18px;font-weight:900;cursor:pointer;text-decoration:none}.primary{background:var(--primary);color:#fff}.outline{background:#fff;border:1px solid var(--border);color:var(--text)}
+.empty{text-align:center;padding:55px 15px;color:var(--muted)}@media(max-width:650px){.item{grid-template-columns:65px 1fr}.item>.qty{grid-column:2}.summary{flex-direction:column;align-items:stretch}.actions{flex-direction:column}.btn{text-align:center}}
+</style>
+</head>
+<body>
+<header class="header"><div class="container nav"><div class="logo">OZZI</div><a href="index.html">العودة للمتجر</a></div></header>
+<main><div class="container"><section class="card"><h1>سلة التسوق</h1><div id="cart"></div></section></div></main>
+<script src="js/cart.js"></script>
+<script>
+const root=document.getElementById("cart");
+function money(v){return new Intl.NumberFormat("en-US",{maximumFractionDigits:0}).format(Math.round(v))+" ج.م";}
+function render(){
+ const items=window.ozziCart.getCart();
+ if(!items.length){root.innerHTML='<div class="empty">السلة فارغة حاليًا.<br><br><a class="btn primary" href="index.html">ابدأ التسوق</a></div>';return;}
+ root.innerHTML=items.map(item=>'<div class="item">'+
+ '<div class="thumb">'+(item.image?'<img src="'+item.image+'" alt="">':(item.emoji||'🛍️'))+'</div>'+
+ '<div><div class="name">'+escapeHtml(item.name||"منتج")+'</div><div class="meta">'+escapeHtml(item.category||"")+'</div><div class="price">'+money(Number(item.price||0)*Number(item.quantity||1))+'</div>'+
+ '<button class="remove" onclick="removeItem(\''+escapeAttr(item.id)+'\')">حذف المنتج</button></div>'+
+ '<div class="qty"><button onclick="changeQty(\''+escapeAttr(item.id)+'\',-1)">−</button><span>'+Number(item.quantity||1)+'</span><button onclick="changeQty(\''+escapeAttr(item.id)+'\',1)">+</button></div>'+
+ '</div>').join("")+
+ '<div class="summary"><div class="total">الإجمالي: '+money(items.reduce((s,i)=>s+Number(i.price||0)*Number(i.quantity||1),0))+'</div><div class="actions"><button class="btn outline" onclick="window.ozziCart.clearCart();render()">تفريغ السلة</button><a class="btn primary" href="checkout.html">إتمام الطلب</a></div></div>';
+}
+function changeQty(id,d){const i=window.ozziCart.getCart().find(x=>String(x.id)===String(id));if(i)window.ozziCart.updateQuantity(id,Math.max(1,Number(i.quantity)+d));render();}
+function removeItem(id){window.ozziCart.removeFromCart(id);render();}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));}
+function escapeAttr(s){return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
+render();
+</script>
+</body></html>
