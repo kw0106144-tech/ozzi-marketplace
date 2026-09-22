@@ -198,7 +198,7 @@
               </div>
               <div style="grid-column:span 2">
                 <span>العنوان</span>
-                <strong>${escapeHtml(order.address)}</strong>
+                <strong>—</strong>
               </div>
             </div>
 
@@ -207,12 +207,7 @@
               ${itemsHtml}
             </div>
 
-            ${order.notes ? `
-              <div style="margin-top:14px;padding:12px;border-radius:12px;background:#fafafa">
-                <span style="color:#777;font-size:12px">ملاحظات</span>
-                <div style="margin-top:5px">${escapeHtml(order.notes)}</div>
-              </div>
-            ` : ""}
+            
 
             <div class="order-footer">
               <div>
@@ -243,8 +238,6 @@
             order_number,
             customer_name,
             country_code,
-            address,
-            notes,
             payment_method,
             status,
             total,
