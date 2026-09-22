@@ -972,7 +972,7 @@
     }
     function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));}
 
-    function productCard(product){
+    function productCard(product, showSpecialBadge=false){
       const name=product.name_ar||product.name||"منتج";
       const hasDiscount=Number(product.original_price)>Number(product.price);
       const symbol=currencies[product.country_code]?.symbol||"ج.م";
@@ -980,7 +980,7 @@
       const image=product.image_url?'<img src="'+escapeHtml(product.image_url)+'" alt="'+escapeHtml(name)+'" loading="lazy">':'<span>🛍️</span>';
       return '<article class="product" data-product-id="'+escapeHtml(product.id)+'">'+
         '<a class="product-image" href="product.html?id='+encodeURIComponent(product.id)+'" aria-label="'+escapeHtml(name)+'">'+image+
-        '<span class="special-offer-badge"><svg viewBox="0 0 24 24"><path d="M13.5 2.5c.4 4.1-1.6 5.9-3.2 7.4-1.2 1.1-2.1 2-2.1 4 0 1.7 1.1 3.5 2.7 3.7-.1-.4-.2-.8-.2-1.2 0-2 1.4-3.5 3.2-5 1.3 1.7 2.5 3.6 2.5 5.9 0 .6-.1 1.2-.3 1.7 2.2-.9 3.7-3.1 3.7-5.7 0-3.4-2.3-6.8-6.3-10.8Z"/></svg>عرض OZZI خاص</span>'+(hasDiscount?'<span class="discount-badge">خصم '+discount+'%</span>':'')+'</a>'+
+        ''+(showSpecialBadge?"<span class=\"special-offer-badge\"><svg viewBox=\"0 0 24 24\"><path d=\"M13.5 2.5c.4 4.1-1.6 5.9-3.2 7.4-1.2 1.1-2.1 2-2.1 4 0 1.7 1.1 3.5 2.7 3.7-.1-.4-.2-.8-.2-1.2 0-2 1.4-3.5 3.2-5 1.3 1.7 2.5 3.6 2.5 5.9 0 .6-.1 1.2-.3 1.7 2.2-.9 3.7-3.1 3.7-5.7 0-3.4-2.3-6.8-6.3-10.8Z\"/></svg>عرض OZZI خاص</span>":'')+''+(hasDiscount?'<span class="discount-badge">خصم '+discount+'%</span>':'')+'</a>'+
         '<div class="product-body"><h3>'+escapeHtml(name)+'</h3>'+
         '<div class="product-category">'+escapeHtml(product.category||"عام")+'</div>'+
         '<div class="product-bottom"><div class="price-wrap"><div class="price">'+formatPrice(product.price,symbol)+'</div>'+
@@ -988,7 +988,7 @@
         '</div><button class="buy" type="button">أضف للسلة</button></div></div></article>';
     }
 
-    async function loadSpecialOffers(country){const grid=document.getElementById("specialOffersGrid");if(!grid)return;try{const sb=window.ozziGetSupabase();const {data,error}=await sb.from("products").select("id,name,name_ar,name_en,category,price,original_price,image_url,stock,country_code,active,ozzi_special_offer").eq("country_code",country).eq("active",true).eq("ozzi_special_offer",true).gt("stock",0).order("created_at",{ascending:false}).limit(8);if(error)throw error;const products=data||[];if(!products.length){grid.innerHTML='<div class="special-empty">لا توجد عروض OZZI خاصة حاليًا.</div>';return;}grid.innerHTML=products.map(productCard).join("");bindCartButtonsForGrid("specialOffersGrid");}catch(error){console.error("OZZI SPECIAL OFFERS ERROR:",error);grid.innerHTML='<div class="product-empty">تعذر تحميل عروض OZZI الخاصة.</div>';}}
+    async function loadSpecialOffers(country){const grid=document.getElementById("specialOffersGrid");if(!grid)return;try{const sb=window.ozziGetSupabase();const {data,error}=await sb.from("products").select("id,name,name_ar,name_en,category,price,original_price,image_url,stock,country_code,active,ozzi_special_offer").eq("country_code",country).eq("active",true).eq("ozzi_special_offer",true).gt("stock",0).order("created_at",{ascending:false}).limit(8);if(error)throw error;const products=data||[];if(!products.length){grid.innerHTML='<div class="special-empty">لا توجد عروض OZZI خاصة حاليًا.</div>';return;}grid.innerHTML=products.map(product=>productCard(product,true)).join("");bindCartButtonsForGrid("specialOffersGrid");}catch(error){console.error("OZZI SPECIAL OFFERS ERROR:",error);grid.innerHTML='<div class="product-empty">تعذر تحميل عروض OZZI الخاصة.</div>';}}
 
     async function loadFeaturedProducts(country){
       const grid=document.getElementById("featuredProductsGrid");
