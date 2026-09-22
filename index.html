@@ -974,22 +974,44 @@
     }
 
     async function loadProducts(country){
-      const grid=document.getElementById("productsGrid"), subtitle=document.getElementById("productsSubtitle");
+      const grid=document.getElementById("productsGrid");
+      const subtitle=document.getElementById("productsSubtitle");
       const countryNames={EG:"مصر",SA:"السعودية",AE:"الإمارات",IQ:"العراق",OM:"سلطنة عُمان"};
-      if(!grid||!window.ozziGetSupabase)return;
+      if(!grid)return;
+
       grid.innerHTML='<div class="product-loading">جاري تحميل المنتجات...</div>';
       if(subtitle)subtitle.textContent="المنتجات المتاحة في "+(countryNames[country]||country);
+
       try{
+        if(typeof window.ozziGetSupabase!=="function"){
+          throw new Error("لم يتم تجهيز اتصال Supabase بعد.");
+        }
+
         const sb=window.ozziGetSupabase();
-        const {data,error}=await sb.from("products").select("id,name,name_ar,name_en,category,price,original_price,image_url,stock,country_code,active,seller_id,seller_name").eq("country_code",country).eq("active",true).order("created_at",{ascending:false});
+        const result=await Promise.race([
+          sb.from("products")
+            .select("id,name,name_ar,name_en,category,price,original_price,image_url,stock,country_code,active,seller_id,seller_name")
+            .eq("country_code",country)
+            .eq("active",true)
+            .order("created_at",{ascending:false}),
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error("انتهت مهلة الاتصال بقاعدة البيانات.")),10000))
+        ]);
+
+        const {data,error}=result;
         if(error)throw error;
+
         const products=(data||[]).filter(p=>Number(p.stock||0)>0);
-        if(!products.length){grid.innerHTML='<div class="product-empty">لا توجد منتجات متاحة حاليًا في هذه الدولة.</div>';return;}
+
+        if(!products.length){
+          grid.innerHTML='<div class="product-empty">لا توجد منتجات متاحة حاليًا في هذه الدولة.</div>';
+          return;
+        }
+
         grid.innerHTML=products.map(productCard).join("");
         bindCartButtons();
       }catch(error){
         console.error("OZZI PRODUCTS ERROR:",error);
-        grid.innerHTML='<div class="product-empty">تعذر تحميل المنتجات حاليًا. تأكد من إعدادات Supabase ثم أعد المحاولة.</div>';
+        grid.innerHTML='<div class="product-empty">تعذر تحميل المنتجات: '+escapeHtml(error.message||"خطأ غير معروف")+'</div>';
       }
     }
 
