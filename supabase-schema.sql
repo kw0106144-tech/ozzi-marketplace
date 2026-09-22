@@ -200,3 +200,29 @@ create policy "Admins can view their own role" on public.admin_roles for select 
 -- Add your admin user if needed:
 -- insert into public.admin_roles(user_id,role) select id,'admin' from auth.users where email='YOUR-EMAIL'
 -- on conflict(user_id) do update set role='admin';
+
+
+-- Seller / supplier management.
+create table if not exists public.sellers (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  phone text,
+  whatsapp text,
+  notes text,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists sellers_name_idx on public.sellers(name);
+alter table public.products add column if not exists seller_id uuid;
+alter table public.products drop constraint if exists products_seller_id_fkey;
+alter table public.products add constraint products_seller_id_fkey foreign key (seller_id) references public.sellers(id) on delete set null;
+alter table public.sellers enable row level security;
+drop policy if exists "Admins can view sellers" on public.sellers;
+create policy "Admins can view sellers" on public.sellers for select to authenticated using (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager')));
+drop policy if exists "Admins can insert sellers" on public.sellers;
+create policy "Admins can insert sellers" on public.sellers for insert to authenticated with check (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager')));
+drop policy if exists "Admins can update sellers" on public.sellers;
+create policy "Admins can update sellers" on public.sellers for update to authenticated using (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager'))) with check (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager')));
+drop policy if exists "Admins can delete sellers" on public.sellers;
+create policy "Admins can delete sellers" on public.sellers for delete to authenticated using (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager')));
