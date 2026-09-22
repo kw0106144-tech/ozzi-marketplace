@@ -592,6 +592,13 @@
       line-height: 1;
     }
 
+    .product-image{position:relative;overflow:hidden;padding:12px}
+    .product-image img{width:100%;height:100%;object-fit:contain;display:block;border-radius:12px}
+    .discount-badge{position:absolute;top:12px;right:12px;background:#E5484D;color:#fff;padding:6px 9px;border-radius:999px;font-size:12px;font-weight:900}
+    .price-wrap{display:grid;gap:2px}
+    .old-price{color:#8A9AA2;font-size:12px;text-decoration:line-through;font-weight:700}
+    .product-loading,.product-empty{grid-column:1/-1;background:#fff;border:1px dashed var(--ozzi-border);border-radius:18px;padding:35px;text-align:center;color:var(--ozzi-muted)}
+
     /* Responsive */
     @media (max-width: 950px) {
       .hero-inner {
@@ -795,61 +802,12 @@
     <section id="products" class="container section">
       <div class="section-head">
         <div>
-          <h2>منتجات مميزة</h2>
-          <p>نماذج مؤقتة — سيتم ربط المنتجات الحقيقية بقاعدة البيانات لاحقًا</p>
+          <h2>منتجات متاحة</h2>
+          <p id="productsSubtitle">المنتجات المتاحة في الدولة المختارة</p>
         </div>
       </div>
-
-      <div class="products">
-
-        <article class="product">
-          <div class="product-image">📱</div>
-          <div class="product-body">
-            <h3>هاتف ذكي</h3>
-            <div class="product-category">إلكترونيات</div>
-            <div class="product-bottom">
-              <div class="price" data-egp="15000">15,000 ج.م</div>
-              <button class="buy" onclick="showToast('سيتم إضافة السلة في المرحلة القادمة')">أضف للسلة</button>
-            </div>
-          </div>
-        </article>
-
-        <article class="product">
-          <div class="product-image">👟</div>
-          <div class="product-body">
-            <h3>حذاء رياضي</h3>
-            <div class="product-category">أحذية</div>
-            <div class="product-bottom">
-              <div class="price" data-egp="1500">1,500 ج.م</div>
-              <button class="buy" onclick="showToast('سيتم إضافة السلة في المرحلة القادمة')">أضف للسلة</button>
-            </div>
-          </div>
-        </article>
-
-        <article class="product">
-          <div class="product-image">🎧</div>
-          <div class="product-body">
-            <h3>سماعات لاسلكية</h3>
-            <div class="product-category">إلكترونيات</div>
-            <div class="product-bottom">
-              <div class="price" data-egp="950">950 ج.م</div>
-              <button class="buy" onclick="showToast('سيتم إضافة السلة في المرحلة القادمة')">أضف للسلة</button>
-            </div>
-          </div>
-        </article>
-
-        <article class="product">
-          <div class="product-image">⌚</div>
-          <div class="product-body">
-            <h3>ساعة ذكية</h3>
-            <div class="product-category">إكسسوارات</div>
-            <div class="product-bottom">
-              <div class="price" data-egp="2200">2,200 ج.م</div>
-              <button class="buy" onclick="showToast('سيتم إضافة السلة في المرحلة القادمة')">أضف للسلة</button>
-            </div>
-          </div>
-        </article>
-
+      <div id="productsGrid" class="products">
+        <div class="product-loading">جاري تحميل المنتجات...</div>
       </div>
     </section>
 
@@ -985,9 +943,84 @@
 
 
 <script>
-// Authentication UI is initialized centrally by js/auth.js.
-// Avoid creating a second Supabase client or referencing the old supabaseClient variable.
-</script>
+    const countrySelect = document.getElementById("countrySelect");
+    const currencies = {EG:{symbol:"ج.م"},SA:{symbol:"ر.س"},AE:{symbol:"د.إ"},IQ:{symbol:"ع.ع"},OM:{symbol:"ر.ع"}};
+
+    function formatPrice(value, symbol) {
+      return new Intl.NumberFormat("ar-EG",{maximumFractionDigits:0}).format(Math.round(Number(value)||0))+" "+symbol;
+    }
+    function getSelectedCountry(){return countrySelect?.value||localStorage.getItem("ozzi_country")||"EG";}
+    function showToast(message){
+      const toast=document.getElementById("toast"); if(!toast)return;
+      toast.textContent=message; toast.classList.add("show");
+      clearTimeout(window.ozziToastTimer); window.ozziToastTimer=setTimeout(()=>toast.classList.remove("show"),2600);
+    }
+    function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));}
+
+    function productCard(product){
+      const name=product.name_ar||product.name||"منتج";
+      const hasDiscount=Number(product.original_price)>Number(product.price);
+      const symbol=currencies[product.country_code]?.symbol||"ج.م";
+      const discount=hasDiscount?Math.max(0,Math.round((1-Number(product.price)/Number(product.original_price))*100)):0;
+      const image=product.image_url?'<img src="'+escapeHtml(product.image_url)+'" alt="'+escapeHtml(name)+'" loading="lazy">':'<span>🛍️</span>';
+      return '<article class="product" data-product-id="'+escapeHtml(product.id)+'">'+
+        '<a class="product-image" href="product.html?id='+encodeURIComponent(product.id)+'" aria-label="'+escapeHtml(name)+'">'+image+
+        (hasDiscount?'<span class="discount-badge">خصم '+discount+'%</span>':'')+'</a>'+
+        '<div class="product-body"><h3>'+escapeHtml(name)+'</h3>'+
+        '<div class="product-category">'+escapeHtml(product.category||"عام")+'</div>'+
+        '<div class="product-bottom"><div class="price-wrap"><div class="price">'+formatPrice(product.price,symbol)+'</div>'+
+        (hasDiscount?'<div class="old-price">'+formatPrice(product.original_price,symbol)+'</div>':'')+
+        '</div><button class="buy" type="button">أضف للسلة</button></div></div></article>';
+    }
+
+    async function loadProducts(country){
+      const grid=document.getElementById("productsGrid"), subtitle=document.getElementById("productsSubtitle");
+      const countryNames={EG:"مصر",SA:"السعودية",AE:"الإمارات",IQ:"العراق",OM:"سلطنة عُمان"};
+      if(!grid||!window.ozziGetSupabase)return;
+      grid.innerHTML='<div class="product-loading">جاري تحميل المنتجات...</div>';
+      if(subtitle)subtitle.textContent="المنتجات المتاحة في "+(countryNames[country]||country);
+      try{
+        const sb=window.ozziGetSupabase();
+        const {data,error}=await sb.from("products").select("id,name,name_ar,name_en,category,price,original_price,image_url,stock,country_code,active,seller_id,seller_name").eq("country_code",country).eq("active",true).order("created_at",{ascending:false});
+        if(error)throw error;
+        const products=(data||[]).filter(p=>Number(p.stock||0)>0);
+        if(!products.length){grid.innerHTML='<div class="product-empty">لا توجد منتجات متاحة حاليًا في هذه الدولة.</div>';return;}
+        grid.innerHTML=products.map(productCard).join("");
+        bindCartButtons();
+      }catch(error){
+        console.error("OZZI PRODUCTS ERROR:",error);
+        grid.innerHTML='<div class="product-empty">تعذر تحميل المنتجات حاليًا. تأكد من إعدادات Supabase ثم أعد المحاولة.</div>';
+      }
+    }
+
+    function getProductData(card){
+      const title=card.querySelector("h3")?.textContent?.trim()||"منتج";
+      const category=card.querySelector(".product-category")?.textContent?.trim()||"";
+      const priceText=card.querySelector(".price")?.textContent||"0";
+      const price=Number(priceText.replace(/[^0-9.]/g,""))||0;
+      const image=card.querySelector(".product-image img")?.src||"";
+      const countryCode=getSelectedCountry();
+      return {id:card.dataset.productId,name:title,category,price,image,currency:currencies[countryCode]?.symbol||"ج.م",country_code:countryCode};
+    }
+    function bindCartButtons(){
+      document.querySelectorAll("#productsGrid .product").forEach(card=>{
+        const button=card.querySelector(".buy"); if(!button||button.dataset.cartBound==="1")return;
+        button.dataset.cartBound="1";
+        button.addEventListener("click",()=>{
+          const product=getProductData(card);
+          if(!product.price)return showToast("سعر المنتج غير متاح حاليًا.");
+          window.ozziCart.addToCart(product); updateCartCount(); showToast("تمت إضافة المنتج إلى السلة 🛒");
+        });
+      });
+    }
+    function updateCartCount(){const count=window.ozziCart?window.ozziCart.cartCount():0;const el=document.getElementById("cartCount");if(el)el.textContent=count;}
+    function updateCountry(){const country=getSelectedCountry();localStorage.setItem("ozzi_country",country);loadProducts(country);}
+    countrySelect.addEventListener("change",updateCountry);
+    window.addEventListener("ozzi:country-changed",event=>{const country=event.detail;if(country&&currencies[country]){countrySelect.value=country;updateCountry();}});
+    const savedCountry=localStorage.getItem("ozzi_country");if(savedCountry&&currencies[savedCountry])countrySelect.value=savedCountry;
+    document.addEventListener("DOMContentLoaded",()=>{updateCountry();updateCartCount();});
+    window.addEventListener("ozzi:cart-updated",updateCartCount);
+  </script>
 
 <script>
 (function () {
