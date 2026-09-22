@@ -105,8 +105,9 @@
         cancelled: "ملغي"
       };
 
-      function money(value) {
-        return new Intl.NumberFormat("ar-EG").format(Number(value || 0)) + " ج.م";
+      function money(value, code="EG") {
+        const symbols={EG:"ج.م",SA:"ر.س",AE:"د.إ",IQ:"ع.ع",OM:"ر.ع"};
+        return new Intl.NumberFormat("ar-EG").format(Number(value || 0)) + " " + (symbols[code]||"ج.م");
       }
 
       function escapeHtml(value) {
@@ -155,9 +156,9 @@
                 <img src="${escapeHtml(item.product_image || "")}" alt="">
                 <div class="order-item-info">
                   <div class="order-item-name">${escapeHtml(item.product_name || "منتج")}</div>
-                  <div class="order-item-meta">${Number(item.quantity || 0)} × ${money(item.unit_price)}</div>
+                  <div class="order-item-meta">${Number(item.quantity || 0)} × ${money(item.unit_price, order.country_code)}</div>
                 </div>
-                <div class="order-item-total">${money(item.line_total)}</div>
+                <div class="order-item-total">${money(Number(item.unit_price||0)*Number(item.quantity||0), order.country_code)}</div>
               </div>
             `).join("")
           : '<p style="color:#777">لا توجد تفاصيل منتجات لهذا الطلب.</p>';
@@ -185,7 +186,7 @@
               </div>
               <div>
                 <span>الهاتف</span>
-                <strong>${escapeHtml(order.phone)}</strong>
+                <strong>${escapeHtml(order.phone || "—")}</strong>
               </div>
               <div>
                 <span>الدولة</span>
@@ -216,7 +217,7 @@
             <div class="order-footer">
               <div>
                 <span style="display:block;color:#777;font-size:13px">إجمالي الطلب</span>
-                <div class="order-total">${money(order.total)}</div>
+                <div class="order-total">${money(order.total, order.country_code)}</div>
               </div>
               <a class="btn btn-outline" href="index.html">العودة للتسوق</a>
             </div>
@@ -241,7 +242,6 @@
             id,
             order_number,
             customer_name,
-            phone,
             country_code,
             address,
             notes,
@@ -256,8 +256,7 @@
               product_name,
               product_image,
               unit_price,
-              quantity,
-              line_total
+              quantity
             )
           `)
           .eq("user_id", user.id)
