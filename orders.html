@@ -59,29 +59,24 @@
       .order-info{grid-template-columns:1fr}
       .order-footer{align-items:flex-start;flex-direction:column}
     }
-  .orders-site-header{background:#071923}.orders-brand{gap:10px;text-decoration:none}.orders-brand-logo{font-size:28px;font-weight:1000;letter-spacing:3px;color:#fff;line-height:1}.orders-brand .brand-text{color:#9fb8c2;font-size:9px;letter-spacing:2px}.orders-site-header .nav-actions{gap:8px}.orders-site-header .btn-outline{border-color:rgba(255,255,255,.18);color:#fff;background:rgba(255,255,255,.06)}.orders-site-header .btn-outline:hover{background:rgba(255,255,255,.12)}.orders-site-header .btn-primary{background:#08789d;border-color:#08789d}.orders-site-header .cart-svg{width:20px;height:20px}.orders-site-header .cart-icon-btn{position:relative;display:inline-flex;align-items:center;gap:5px}.orders-site-header .cart-count{min-width:18px;height:18px;display:inline-grid;place-items:center;border-radius:50%;background:#e5484d;color:#fff;font-size:10px;font-weight:900}.orders-site-header .profile-icon{font-size:15px}@media(max-width:700px){.orders-site-header .nav-actions{gap:5px;overflow-x:auto;max-width:70vw}.orders-site-header .nav-actions .btn{white-space:nowrap}.orders-brand .brand-text{display:none}}
   </style>
 </head>
 <body>
-  <header class="site-header orders-site-header">
+  <header class="site-header">
     <div class="container nav">
-      <a class="brand orders-brand" href="index.html" aria-label="OZZI">
-        <span class="orders-brand-logo">OZZI</span>
+      <a class="brand" href="index.html" aria-label="OZZI">
+        <span style="font-size:28px;font-weight:1000;letter-spacing:3px;color:#fff">OZZI</span>
         <span class="brand-text">MORE THAN STORE</span>
       </a>
       <div class="nav-actions">
         <a class="btn btn-outline cart-link cart-icon-btn" href="cart.html" aria-label="سلة التسوق" title="السلة">
-          <svg class="cart-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="20" r="1.6" fill="currentColor"/><circle cx="18" cy="20" r="1.6" fill="currentColor"/></svg>
+          <svg class="cart-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="20" r="1.6" fill="currentColor"/><circle cx="18" cy="20" r="1.6" fill="currentColor"/></svg>
           <span id="cartCount" class="cart-count">0</span>
         </a>
-        <a class="btn btn-outline" href="favorites.html">❤️ المفضلة</a>
-        <a class="btn btn-outline" href="notifications.html">🔔 الإشعارات</a>
-        <a class="btn btn-outline" href="orders.html">📦 طلباتي</a>
-        <a class="btn btn-primary profile-btn" href="profile.html"><span class="profile-icon" aria-hidden="true">👤</span><span>الملف الشخصي</span></a>
+        <a class="btn btn-outline" href="profile.html">الملف الشخصي</a>
       </div>
     </div>
-  </header>
-  <main class="orders-page">
+  </header>  <main class="orders-page">
     <section class="orders-header">
       <h1>طلباتي</h1>
       <p>تابع جميع طلباتك وتفاصيل كل طلب وحالته.</p>
