@@ -11,7 +11,7 @@ header{background:var(--dark);color:#fff;padding:16px 0}.nav{display:flex;align-
 main{padding:35px 0 70px}.head{background:#fff;border:1px solid var(--border);border-radius:22px;padding:25px;margin-bottom:24px;box-shadow:0 10px 30px rgba(7,25,35,.06)}.head h1{margin:0 0 5px;font-size:32px}.head p{margin:0;color:var(--muted)}
 .products{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.product{background:#fff;border:1px solid var(--border);border-radius:20px;overflow:hidden;transition:.2s;box-shadow:0 5px 20px rgba(7,25,35,.04)}.product:hover{transform:translateY(-4px)}.product-image{height:210px;background:#eef9fc;display:grid;place-items:center}.product-image img{width:100%;height:100%;object-fit:contain}.body{padding:16px}.cat{font-size:12px;color:var(--muted)}.name{font-size:18px;font-weight:900;margin:5px 0 10px;line-height:1.5}.price{font-size:20px;font-weight:900;color:#08789D}.old{text-decoration:line-through;color:#899;font-size:13px;margin-right:6px}.discount{display:inline-block;background:#E5484D;color:#fff;padding:3px 7px;border-radius:999px;font-size:11px;margin-top:7px}.empty,.loading{background:#fff;border:1px solid var(--border);border-radius:18px;padding:45px;text-align:center;color:var(--muted)}
 @media(max-width:900px){.products{grid-template-columns:repeat(2,1fr)}}@media(max-width:500px){.products{gap:10px}.product-image{height:170px}.name{font-size:15px}.head h1{font-size:25px}}
-</style>
+.product{position:relative}.favorite-btn{position:absolute;top:10px;left:10px;z-index:5;width:40px;height:40px;border:0;border-radius:50%;background:#fff;color:#7a8790;box-shadow:0 5px 16px #0002;font-size:23px;cursor:pointer}.favorite-btn.is-favorite{color:#e5484d;background:#fff0f0}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -20,7 +20,7 @@ main{padding:35px 0 70px}.head{background:#fff;border:1px solid var(--border);bo
 <section class="head"><h1 id="title">القسم</h1><p id="subtitle">منتجات القسم المتاحة في دولتك</p></section>
 <div id="products" class="products"><div class="loading">جاري تحميل المنتجات...</div></div>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js"></script><script src="js/auth.js"></script><script src="js/cart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js"></script><script src="js/auth.js"></script><script src="js/favorites.js"></script><script src="js/cart.js"></script>
 <script>
 (async function(){
 const params=new URLSearchParams(location.search),category=params.get("category");
@@ -36,8 +36,9 @@ const sb=window.ozziGetSupabase();
 const {data,error}=await sb.from("products").select("id,name,name_ar,category,price,original_price,image_url,stock,country_code,active").eq("active",true).eq("country_code",country).eq("category",category).gt("stock",0).order("created_at",{ascending:false});
 if(error)throw error;
 if(!data?.length){grid.innerHTML='<div class="empty">لا توجد منتجات متاحة في هذا القسم حاليًا.</div>';return;}
-grid.innerHTML=data.map(p=>{const n=p.name_ar||p.name||"منتج",d=Number(p.original_price)>Number(p.price);return '<a class="product" href="product.html?id='+encodeURIComponent(p.id)+'"><div class="product-image">'+(p.image_url?'<img src="'+p.image_url.replace(/"/g,"&quot;")+'" alt="'+n.replace(/"/g,"&quot;")+'">':'🛍️')+'</div><div class="body"><div class="cat">'+p.category+'</div><div class="name">'+n+'</div><div class="price">'+money(p.price)+" "+symbol+(d?'<span class="old">'+money(p.original_price)+" "+symbol+"</span>":"")+'</div>'+(d?'<span class="discount">خصم '+Math.round((1-p.price/p.original_price)*100)+'%</span>':"")+'</div></a>';}).join("");
+grid.innerHTML=data.map(p=>{const n=p.name_ar||p.name||"منتج",d=Number(p.original_price)>Number(p.price);return '<a class="product" href="product.html?id='+encodeURIComponent(p.id)+'"><button class="favorite-btn" type="button" data-favorite="'+p.id+'">♡</button><div class="product-image">'+(p.image_url?'<img src="'+p.image_url.replace(/"/g,"&quot;")+'" alt="'+n.replace(/"/g,"&quot;")+'">':'🛍️')+'</div><div class="body"><div class="cat">'+p.category+'</div><div class="name">'+n+'</div><div class="price">'+money(p.price)+" "+symbol+(d?'<span class="old">'+money(p.original_price)+" "+symbol+"</span>":"")+'</div>'+(d?'<span class="discount">خصم '+Math.round((1-p.price/p.original_price)*100)+'%</span>':"")+'</div></a>';}).join("");
 }catch(e){console.error(e);grid.innerHTML='<div class="empty">تعذر تحميل منتجات القسم.</div>';}
+document.querySelectorAll("[data-favorite]").forEach(b=>{b.onclick=async e=>{e.preventDefault();e.stopPropagation();try{const saved=await window.ozziFavorites.toggle(b.dataset.favorite);b.textContent=saved?"♥":"♡";b.classList.toggle("is-favorite",saved)}catch(err){if(err.message==="LOGIN_REQUIRED")location.href="login.html"}}});
 })();
 </script>
 </body></html>
