@@ -30,6 +30,8 @@
       const { data, error } = await sb.auth.getSession();
       if (error) throw error;
       const loggedIn = !!data.session;
+      const user = data.session?.user || null;
+      const meta = user?.user_metadata || {};
 
       document.querySelectorAll('[data-auth="login"], [data-auth="register"]').forEach(el => {
         el.style.setProperty("display", loggedIn ? "none" : "inline-flex", "important");
@@ -38,6 +40,19 @@
       document.querySelectorAll('[data-auth="account"], [data-auth="logout"]').forEach(el => {
         el.style.setProperty("display", loggedIn ? "inline-flex" : "none", "important");
       });
+
+      const countrySection = document.getElementById("countrySection");
+      if (countrySection) countrySection.style.display = loggedIn ? "none" : "";
+
+      const countryFlags = { EG:"🇪🇬", SA:"🇸🇦", AE:"🇦🇪", IQ:"🇮🇶", OM:"🇴🇲" };
+      const flagEl = document.getElementById("userCountryFlag");
+      if (flagEl) {
+        const code = String(meta.country_code || "").toUpperCase();
+        flagEl.textContent = countryFlags[code] || "";
+        flagEl.setAttribute("aria-label", code ? "دولة الحساب: " + code : "دولة الحساب");
+        flagEl.title = code ? "دولة الحساب: " + code : "دولة الحساب";
+        flagEl.style.setProperty("display", loggedIn && countryFlags[code] ? "inline-grid" : "none", "important");
+      }
     } catch (err) {
       console.error("OZZI AUTH HEADER ERROR:", err);
     }
