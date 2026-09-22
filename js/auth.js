@@ -56,6 +56,14 @@
       const flagEl = document.getElementById("userCountryFlag");
       if (flagEl) {
         const code = String(meta.country_code || "").toUpperCase();
+
+        // The account country is the single source of truth after login.
+        // Do not keep using an older country stored in this browser.
+        if (loggedIn && code) {
+          localStorage.setItem("ozzi_country", code);
+          window.dispatchEvent(new CustomEvent("ozzi:country-changed", { detail: code }));
+        }
+
         flagEl.innerHTML = countryFlags[code] ? `<img src="${countryFlags[code]}" alt="${code}" loading="eager" decoding="async">` : "";
         flagEl.setAttribute("aria-label", code ? "دولة الحساب: " + code : "دولة الحساب");
         flagEl.title = code ? "دولة الحساب: " + code : "دولة الحساب";
