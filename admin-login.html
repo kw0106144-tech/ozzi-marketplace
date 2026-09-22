@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دخول الإدارة | OZZI</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.admin-login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#08111f,#10263d)}
+.admin-login-card{width:min(430px,100%);background:#fff;border-radius:24px;padding:34px;box-shadow:0 24px 70px rgba(0,0,0,.28)}
+.admin-login-logo{text-align:center;font-size:42px;font-weight:1000;letter-spacing:5px;margin-bottom:4px}
+.admin-login-badge{text-align:center;color:#667085;margin-bottom:24px}
+.admin-login-card h1{text-align:center;margin:0 0 8px}
+.admin-login-desc{text-align:center;color:#667085;margin:0 0 24px}
+.admin-login-message{min-height:24px;margin:14px 0 0;text-align:center;color:#b42318}
+.admin-login-message.success{color:#067647}
+.admin-login-footer{text-align:center;margin-top:20px}
+.admin-login-footer a{color:inherit}
+</style>
+</head>
+<body>
+<main class="admin-login-page">
+<section class="admin-login-card">
+<div class="admin-login-logo">OZZI</div>
+<div class="admin-login-badge">ADMIN PANEL</div>
+<h1>تسجيل دخول الإدارة</h1>
+<p class="admin-login-desc">استخدم حساب الإدارة للوصول إلى لوحة التحكم.</p>
+
+<form id="adminLoginForm">
+<div class="form-group">
+<label for="adminEmail">البريد الإلكتروني</label>
+<input id="adminEmail" type="email" autocomplete="username" placeholder="admin@example.com" required>
+</div>
+<div class="form-group">
+<label for="adminPassword">كلمة المرور</label>
+<input id="adminPassword" type="password" autocomplete="current-password" placeholder="********" required>
+</div>
+<button type="submit" class="auth-button" id="adminLoginButton">دخول لوحة التحكم</button>
+<p id="adminLoginMessage" class="admin-login-message" aria-live="polite"></p>
+</form>
+
+<div class="admin-login-footer">
+<a href="index.html">العودة إلى المتجر</a>
+</div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script>
+(function(){
+  const form=document.getElementById("adminLoginForm");
+  const btn=document.getElementById("adminLoginButton");
+  const msg=document.getElementById("adminLoginMessage");
+
+  async function getClient(){
+    if(!window.supabase||!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY){
+      throw new Error("تعذر تحميل إعدادات تسجيل الدخول.");
+    }
+    return window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY,{
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:"ozzi-auth"}
+    });
+  }
+
+  async function checkAdmin(sb,user){
+    const {data,error}=await sb.from("admin_roles").select("role").eq("user_id",user.id).maybeSingle();
+    if(error) throw error;
+    return !!data && ["admin","manager"].includes(data.role);
+  }
+
+  async function redirectIfAdmin(){
+    const sb=await getClient();
+    const {data}=await sb.auth.getSession();
+    if(data.session && await checkAdmin(sb,data.session.user)){
+      window.location.replace("admin.html");
+    }
+  }
+
+  form.addEventListener("submit",async function(e){
+    e.preventDefault();
+    msg.textContent="";
+    msg.className="admin-login-message";
+    btn.disabled=true;
+    btn.textContent="جاري التحقق...";
+
+    try{
+      const sb=await getClient();
+      const email=document.getElementById("adminEmail").value.trim().toLowerCase();
+      const password=document.getElementById("adminPassword").value;
+
+      const {data,error}=await sb.auth.signInWithPassword({email,password});
+      if(error) throw error;
+      if(!data.session) throw new Error("تعذر إنشاء جلسة تسجيل الدخول.");
+
+      const isAdmin=await checkAdmin(sb,data.user);
+      if(!isAdmin){
+        await sb.auth.signOut();
+        throw new Error("هذا الحساب ليس لديه صلاحية دخول لوحة الإدارة.");
+      }
+
+      msg.textContent="تم التحقق بنجاح، جاري فتح لوحة التحكم...";
+      msg.className="admin-login-message success";
+      setTimeout(()=>window.location.replace("admin.html"),250);
+    }catch(error){
+      console.error("OZZI ADMIN LOGIN ERROR:",error);
+      msg.textContent=error.message||"البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+    }finally{
+      btn.disabled=false;
+      btn.textContent="دخول لوحة التحكم";
+    }
+  });
+
+  redirectIfAdmin().catch(()=>{});
+})();
+</script>
+</body>
+</html>
