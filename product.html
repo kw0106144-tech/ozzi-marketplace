@@ -7,7 +7,7 @@
 <style>
 :root{--p:#1B91B7;--dark:#071923;--bg:#F5FAFC;--muted:#607985;--border:#DCEBF0}
 *{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:var(--bg);color:#10212B}.container{width:min(1120px,calc(100% - 28px));margin:auto}
-header{background:var(--dark);color:#fff;padding:16px 0}.nav{display:flex;justify-content:space-between;align-items:center;gap:15px}.logo{font-size:30px;font-weight:900;letter-spacing:2px}.actions{display:flex;gap:10px}.btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border-radius:11px;text-decoration:none;border:1px solid rgba(255,255,255,.2);color:#fff;background:transparent;font-weight:800;cursor:pointer}.primary{background:var(--p);border-color:var(--p)}
+header{background:var(--dark);color:#fff;padding:16px 0}.nav{display:flex;justify-content:space-between;align-items:center;gap:15px}.logo{font-size:30px;font-weight:900;letter-spacing:2px}.actions{display:flex;gap:10px}.btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border-radius:11px;text-decoration:none;border:1px solid rgba(255,255,255,.2);color:#fff;background:transparent;font-weight:800;cursor:pointer}.cart-btn{gap:7px;position:relative}.cart-icon{width:24px;height:24px;display:block;flex:0 0 auto}.cart-count{min-width:21px;height:21px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#E5484D;color:#fff;font-size:12px;font-weight:900;line-height:1}.primary{background:var(--p);border-color:var(--p)}
 main{padding:35px 0}.product-page{display:grid;grid-template-columns:1fr 1fr;gap:35px;background:#fff;border:1px solid var(--border);border-radius:24px;padding:24px;box-shadow:0 15px 40px rgba(7,25,35,.07)}
 .gallery-main{height:470px;border-radius:18px;background:#eef9fc;display:grid;place-items:center;position:relative;overflow:hidden}.gallery-main img{width:100%;height:100%;object-fit:contain}.thumbs{display:flex;gap:10px;overflow:auto;margin-top:12px}.thumb{width:78px;height:78px;flex:0 0 auto;border:2px solid transparent;border-radius:10px;background:#eef9fc;cursor:pointer;overflow:hidden}.thumb.active{border-color:var(--p)}.thumb img{width:100%;height:100%;object-fit:cover}
 .info{padding:10px}.category{color:var(--muted);font-size:14px}.title{font-size:34px;margin:8px 0 15px}.price{font-size:30px;font-weight:900;color:#08789D}.old{font-size:15px;color:#899;text-decoration:line-through;margin-top:3px}.discount{display:inline-block;background:#E5484D;color:#fff;padding:6px 10px;border-radius:999px;font-weight:800;margin:12px 0}.desc{color:#536A73;line-height:1.9;margin:20px 0}.stock{font-weight:800;margin:15px 0}.qty{display:flex;align-items:center;gap:10px;margin:18px 0}.qty button{width:40px;height:40px;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:20px}.qty span{min-width:35px;text-align:center;font-weight:900}.buy{width:100%;border:0;border-radius:13px;background:var(--p);color:#fff;padding:15px;font-weight:900;font-size:17px;cursor:pointer}.message{margin-top:15px;padding:12px;border-radius:10px;background:#eef9fc;color:#08789D;display:none}.loading,.error{text-align:center;background:#fff;padding:50px;border-radius:20px;border:1px solid var(--border)}
@@ -15,7 +15,11 @@ main{padding:35px 0}.product-page{display:grid;grid-template-columns:1fr 1fr;gap
 </style>
 </head>
 <body>
-<header><div class="container nav"><a class="logo" href="index.html">OZZI</a><div class="actions"><a class="btn" href="cart.html">🛒 السلة</a><a class="btn primary" href="index.html">المتجر</a></div></div></header>
+<header><div class="container nav"><a class="logo" href="index.html">OZZI</a><div class="actions">
+<a class="btn cart-btn" href="cart.html" aria-label="سلة التسوق" title="السلة">
+<svg class="cart-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="20" r="1.6" fill="currentColor"/><circle cx="18" cy="20" r="1.6" fill="currentColor"/></svg>
+<span>السلة</span><span id="cartCount" class="cart-count">0</span>
+</a><a class="btn primary" href="index.html">المتجر</a></div></div></header>
 <main class="container">
 <div id="loading" class="loading">جاري تحميل المنتج...</div>
 <div id="error" class="error" style="display:none"></div>
@@ -35,7 +39,7 @@ const id=new URLSearchParams(location.search).get("id");
 const loading=document.getElementById("loading"),errorBox=document.getElementById("error"),page=document.getElementById("productPage");
 const countryNames={EG:"مصر",SA:"السعودية",AE:"الإمارات",IQ:"العراق",OM:"سلطنة عُمان"};
 const symbols={EG:"ج.م",SA:"ر.س",AE:"د.إ",IQ:"ع.ع",OM:"ر.ع"};
-const money=v=>new Intl.NumberFormat("ar-EG",{maximumFractionDigits:0}).format(Math.round(Number(v)||0));
+const money=v=>new Intl.NumberFormat("ar-EG",{maximumFractionDigits:0}).format(Math.round(Number(v)||0));\nfunction updateCartCount(){const el=document.getElementById("cartCount");if(el)el.textContent=window.ozziCart?window.ozziCart.cartCount():0;}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
 try{
 if(!id)throw new Error("لم يتم تحديد المنتج.");
@@ -61,7 +65,7 @@ function setImage(src,index){main.innerHTML=src?'<img src="'+esc(src)+'" alt="'+
 thumbs.innerHTML=images.map((src,i)=>'<button class="thumb '+(i===0?"active":"")+'" type="button" data-i="'+i+'"><img src="'+esc(src)+'" alt=""></button>').join("");
 thumbs.querySelectorAll(".thumb").forEach(b=>b.onclick=()=>setImage(images[Number(b.dataset.i)],Number(b.dataset.i)));setImage(images[0]||"",0);
 document.getElementById("buy").onclick=()=>{window.ozziCart.addToCart({id:p.id,name,category:p.category||"عام",price:Number(p.price),image:images[0]||"",currency:symbol,country_code:p.country_code,quantity:qty});document.getElementById("message").style.display="block";document.getElementById("message").textContent="تمت إضافة المنتج إلى السلة 🛒";};
-loading.style.display="none";page.style.display="grid";
+loading.style.display="none";page.style.display="grid";updateCartCount();window.addEventListener("ozzi:cart-updated",updateCartCount);
 }catch(e){console.error(e);loading.style.display="none";errorBox.style.display="block";errorBox.textContent=e.message||"تعذر تحميل المنتج.";}
 })();
 </script>
