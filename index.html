@@ -799,6 +799,15 @@
       </div>
     </section>
 
+    <section id="featured" class="container section">
+      <div class="section-head">
+        <div><h2>منتجات مميزة</h2><p>اختيارات مميزة من OZZI</p></div>
+      </div>
+      <div id="featuredProductsGrid" class="products">
+        <div class="product-loading">جاري تحميل المنتجات المميزة...</div>
+      </div>
+    </section>
+
     <section id="products" class="container section">
       <div class="section-head">
         <div>
@@ -913,6 +922,26 @@
         '</div><button class="buy" type="button">أضف للسلة</button></div></div></article>';
     }
 
+    async function loadFeaturedProducts(country){
+      const grid=document.getElementById("featuredProductsGrid");
+      if(!grid)return;
+      try{
+        const sb=window.ozziGetSupabase();
+        const {data,error}=await sb.from("products")
+          .select("id,name,name_ar,name_en,category,price,original_price,image_url,stock,country_code,active,featured")
+          .eq("country_code",country).eq("active",true).eq("featured",true).gt("stock",0)
+          .order("created_at",{ascending:false}).limit(8);
+        if(error)throw error;
+        const products=data||[];
+        if(!products.length){grid.innerHTML='<div class="product-empty">لا توجد منتجات مميزة حاليًا.</div>';return;}
+        grid.innerHTML=products.map(productCard).join("");
+        bindCartButtonsForGrid("featuredProductsGrid");
+      }catch(error){
+        console.error("OZZI FEATURED PRODUCTS ERROR:",error);
+        grid.innerHTML='<div class="product-empty">تعذر تحميل المنتجات المميزة.</div>';
+      }
+    }
+
     async function loadProducts(country){
       const grid=document.getElementById("productsGrid");
       const subtitle=document.getElementById("productsSubtitle");
@@ -964,6 +993,12 @@
       const countryCode=getSelectedCountry();
       return {id:card.dataset.productId,name:title,category,price,image,currency:currencies[countryCode]?.symbol||"ج.م",country_code:countryCode};
     }
+    function bindCartButtonsForGrid(gridId){
+      document.querySelectorAll("#"+gridId+" .product").forEach(card=>{
+        const button=card.querySelector(".buy"); if(!button||button.dataset.cartBound==="1")return;
+        button.dataset.cartBound="1"; button.addEventListener("click",()=>{const product=getProductData(card);if(!product.price)return showToast("سعر المنتج غير متاح حاليًا.");window.ozziCart.addToCart(product);updateCartCount();showToast("تمت إضافة المنتج إلى السلة");});
+      });
+    }
     function bindCartButtons(){
       document.querySelectorAll("#productsGrid .product").forEach(card=>{
         const button=card.querySelector(".buy"); if(!button||button.dataset.cartBound==="1")return;
@@ -976,7 +1011,7 @@
       });
     }
     function updateCartCount(){const count=window.ozziCart?window.ozziCart.cartCount():0;const el=document.getElementById("cartCount");if(el)el.textContent=count;}
-    function updateCountry(){const country=getSelectedCountry();localStorage.setItem("ozzi_country",country);loadProducts(country);}
+    function updateCountry(){const country=getSelectedCountry();localStorage.setItem("ozzi_country",country);loadFeaturedProducts(country);loadProducts(country);}
     countrySelect.addEventListener("change",updateCountry);
     window.addEventListener("ozzi:country-changed",event=>{const country=event.detail;if(country&&currencies[country]){countrySelect.value=country;updateCountry();}});
     const savedCountry=localStorage.getItem("ozzi_country");if(savedCountry&&currencies[savedCountry])countrySelect.value=savedCountry;
