@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#071923">
+<title>الملف الشخصي | OZZI</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  body{background:#f5fafc}
+  .profile-page{min-height:100vh;display:grid;place-items:center;padding:24px}
+  .profile-card{width:min(620px,100%);background:#fff;border:1px solid #dcebf0;border-radius:24px;padding:32px;box-shadow:0 18px 55px rgba(7,25,35,.10)}
+  .profile-top{display:flex;align-items:center;gap:16px;margin-bottom:28px}
+  .profile-avatar{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;background:#eef9fc;font-size:30px}
+  .profile-top h1{margin:0;color:#10212b;font-size:28px}
+  .profile-top p{margin:3px 0 0;color:#607985;font-size:14px}
+  .profile-info{display:grid;gap:12px}
+  .profile-row{display:flex;justify-content:space-between;gap:20px;padding:15px 16px;background:#f8fcfd;border:1px solid #e5f0f3;border-radius:14px}
+  .profile-row span:first-child{color:#607985;font-weight:700}
+  .profile-row span:last-child{font-weight:800;color:#10212b;word-break:break-word}
+  .profile-actions{display:flex;gap:10px;margin-top:24px}
+  .profile-actions a,.profile-actions button{flex:1;text-align:center}
+  .btn{border:0;cursor:pointer;border-radius:11px;padding:11px 19px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+  .btn-primary{background:#1b91b7;color:#fff}.btn-outline{background:transparent;color:#10212b;border:1px solid #dcebf0}
+  @media(max-width:520px){.profile-card{padding:22px}.profile-row{flex-direction:column;gap:4px}.profile-actions{flex-direction:column}}
+</style>
+</head>
+<body>
+<main class="profile-page">
+<section class="profile-card">
+  <div class="profile-top">
+    <div class="profile-avatar">👤</div>
+    <div>
+      <h1>الملف الشخصي</h1>
+      <p>بيانات حسابك في OZZI</p>
+    </div>
+  </div>
+  <div id="profileMessage" class="auth-message">جاري تحميل بيانات الحساب...</div>
+  <div id="profileInfo" class="profile-info" hidden>
+    <div class="profile-row"><span>الاسم</span><span id="profileName">—</span></div>
+    <div class="profile-row"><span>البريد الإلكتروني</span><span id="profileEmail">—</span></div>
+    <div class="profile-row"><span>رقم الهاتف</span><span id="profilePhone">—</span></div>
+    <div class="profile-row"><span>الدولة</span><span id="profileCountry">—</span></div>
+  </div>
+  <div class="profile-actions">
+    <a class="btn btn-primary" href="index.html">العودة للمتجر</a>
+    <button class="btn btn-outline" type="button" onclick="logoutUser()">تسجيل الخروج</button>
+  </div>
+</section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  const message = document.getElementById("profileMessage");
+  const info = document.getElementById("profileInfo");
+  try {
+    const sb = window.ozziGetSupabase();
+    const { data, error } = await sb.auth.getSession();
+    if (error) throw error;
+    if (!data.session) {
+      window.location.replace("login.html");
+      return;
+    }
+    const user = data.session.user;
+    const meta = user.user_metadata || {};
+    document.getElementById("profileName").textContent = meta.full_name || "غير محدد";
+    document.getElementById("profileEmail").textContent = user.email || "غير محدد";
+    document.getElementById("profilePhone").textContent = meta.phone || "غير محدد";
+    document.getElementById("profileCountry").textContent = meta.country_id || "غير محدد";
+    message.hidden = true;
+    info.hidden = false;
+  } catch (error) {
+    console.error("OZZI Profile Error:", error);
+    message.textContent = "تعذر تحميل بيانات الحساب. حاول تسجيل الدخول مرة أخرى.";
+  }
+});
+</script>
+</body>
+</html>
