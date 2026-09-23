@@ -185,16 +185,11 @@ async function createOrder(e){
    user_id:user.id,
    customer_name:name,
    customer_phone:phone,
-   alternate_phone:alternatePhone||null,
    country_code:countryCode,
-   address:address,
    notes:storedNotes||null,
    payment_method:"cod",
    status:"pending",
-   total:finalTotal,
-   client_order_id:clientOrderId,
-   coupon_code:appliedCoupon?.code||null,
-   discount_amount:discount
+   total:finalTotal
   };
 
   const orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
