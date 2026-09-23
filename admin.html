@@ -56,19 +56,28 @@ function showCustomerDetails(id){
   document.getElementById("closeCustomerDetails").onclick=()=>document.getElementById("customerDetails").innerHTML="";
 }
 async function loadCustomers(){
-  const {data:orders,error}=await sb.from("orders").select("id,user_id,customer_name,customer_phone,country_code,notes,total,created_at,status").order("created_at",{ascending:false});
+  const {data:orders,error}=await sb.from("orders").select("id,user_id,customer_name,customer_phone,country_code,shipping_address,total,created_at,status").order("created_at",{ascending:false});
   if(error)throw error;
   const map=new Map();
+  const parseShipping=(value)=>{
+    const text=String(value||"");
+    const city=(text.match(/(?:^|\\n)المدينة \/ المحافظة:\\s*(.*?)(?:\\n|$)/)||[])[1]||"";
+    const address=(text.match(/(?:^|\\n)العنوان:\\s*(.*?)(?:\\n|$)/)||[])[1]||"";
+    return {city:city.trim(),address:address.trim()};
+  };
   (orders||[]).forEach(o=>{
     if(!o.user_id)return;
+    const shipping=parseShipping(o.shipping_address);
     let c=map.get(o.user_id);
     if(!c){
-      const parsedNotes=String(o.notes||""); const cityMatch=parsedNotes.match(/(?:^|\n)__OZZI_CITY__:(.*?)(?:\n|$)/); const addressMatch=parsedNotes.match(/(?:^|\n)__OZZI_ADDRESS__:(.*?)(?:\n|$)/); c={id:o.user_id,name:o.customer_name||"عميل",phone:o.customer_phone||"",address:addressMatch?addressMatch[1].trim():"",city:cityMatch?cityMatch[1].trim():"",country:countries[o.country_code]||o.country_code||"—",email:"",orders:0,total:0,lastOrder:o.created_at};
+      c={id:o.user_id,name:o.customer_name||"عميل",phone:o.customer_phone||"",address:shipping.address,city:shipping.city,country:countries[o.country_code]||o.country_code||"—",email:"",orders:0,total:0,lastOrder:o.created_at};
       map.set(o.user_id,c);
     }
     c.orders++;
     if(o.customer_name)c.name=o.customer_name;
-    if(o.customer_phone)c.phone=o.customer_phone; const noteText=String(o.notes||""); const cityMatch=noteText.match(/(?:^|\n)__OZZI_CITY__:(.*?)(?:\n|$)/); if(cityMatch)c.city=cityMatch[1].trim(); const addressMatch=noteText.match(/(?:^|\n)__OZZI_ADDRESS__:(.*?)(?:\n|$)/); if(addressMatch)c.address=addressMatch[1].trim();
+    if(o.customer_phone)c.phone=o.customer_phone;
+    if(shipping.city)c.city=shipping.city;
+    if(shipping.address)c.address=shipping.address;
     if(o.status!=="cancelled")c.total+=Number(o.total||0);
     if(new Date(o.created_at)>new Date(c.lastOrder))c.lastOrder=o.created_at;
   });
