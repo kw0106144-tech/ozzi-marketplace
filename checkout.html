@@ -236,16 +236,16 @@ body{background:#f5f7f8}
    user=refreshed.data.session.user;
    const freshUserId=user.id;
 
-   // استخدم فقط أعمدة orders الموجودة فعليًا في قاعدة البيانات الحالية.\n   // بيانات الهاتف والعنوان والكوبون تظل موجودة في رسالة واتساب وبيانات الطلب المحلية،\n   // لكن لا نرسلها إلى أعمدة غير موجودة في جدول orders.\n   const orderData={user_id:freshUserId,customer_name:name,country_code:countryCode,payment_method:"cod",status:"pending",total:finalTotal};
-   let orderResult=await sb.from("orders").insert(orderData).select("id,order_number,created_at").single();
+   // استخدم فقط أعمدة orders الموجودة فعليًا في قاعدة البيانات الحالية.\n   // بيانات الهاتف والعنوان والكوبون تظل موجودة في رسالة واتساب وبيانات الطلب المحلية،\n   // لكن لا نرسلها إلى أعمدة غير موجودة في جدول orders.\n   const orderPayload={user_id:freshUserId,customer_name:name,country_code:countryCode,payment_method:"cod",status:"pending",total:finalTotal};
+   let orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
 
    // في حالة انتهاء الـAccess Token لحظة الضغط على التأكيد، نعمل Refresh مرة ثانية ونحاول مرة واحدة.
    if(orderResult.error && (orderResult.error.code==="401" || /jwt|token|session/i.test(String(orderResult.error.message||"")))){
      const retry=await sb.auth.refreshSession();
      if(retry.error || !retry.data?.session?.user) throw orderResult.error;
      user=retry.data.session.user;
-     orderData.user_id=user.id;
-     orderResult=await sb.from("orders").insert(orderData).select("id,order_number,created_at").single();
+     orderPayload.user_id=user.id;
+     orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
    }
 
    if(orderResult.error){
