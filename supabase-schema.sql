@@ -22,6 +22,8 @@ alter table public.orders add column if not exists order_number bigint generated
 alter table public.orders add column if not exists alternate_phone text;
 alter table public.orders add column if not exists city text;
 alter table public.orders add column if not exists coupon_code text;
+alter table public.orders add column if not exists client_order_id uuid;
+create unique index if not exists orders_client_order_id_uidx on public.orders(client_order_id) where client_order_id is not null;
 alter table public.orders add column if not exists discount_amount numeric(12,2) not null default 0 check (discount_amount >= 0);
 
 create table if not exists public.coupons (
