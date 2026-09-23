@@ -142,7 +142,7 @@ body{background:#f5f7f8}
   OM:["مسقط","ظفار","شمال الباطنة","جنوب الباطنة","مسندم","البريمي","الداخلية","شمال الشرقية","جنوب الشرقية","الوسطى"]
  };
  const loading=document.getElementById("loadingState"),empty=document.getElementById("emptyState"),content=document.getElementById("checkoutContent"),form=document.getElementById("checkoutForm"),submit=document.getElementById("submitOrder"),message=document.getElementById("checkoutMessage"),itemsBox=document.getElementById("summaryItems"),subtotalBox=document.getElementById("summarySubtotal"),discountRow=document.getElementById("discountRow"),discountBox=document.getElementById("summaryDiscount"),totalBox=document.getElementById("summaryTotal"),cityEl=document.getElementById("city"),couponEl=document.getElementById("coupon"),couponBtn=document.getElementById("applyCoupon"),couponMsg=document.getElementById("couponMessage");
- let sb=null,user=null,countryCode="",countryName="",cart=[],subtotal=0,discount=0,appliedCoupon=null,clientOrderId="";
+ let sb=null,user=null,countryCode="",countryName="",cart=[],subtotal=0,discount=0,appliedCoupon=null;
 
  function money(v){return new Intl.NumberFormat("ar-EG").format(Math.round(Number(v)||0))+" "+(symbols[countryCode]||"ج.م")}
  function setMessage(t,type){message.className="checkout-message "+type;message.textContent=t}
@@ -241,24 +241,20 @@ body{background:#f5f7f8}
     // استخدم فقط أعمدة orders الموجودة فعليًا في قاعدة البيانات الحالية.
     // بيانات الهاتف والعنوان والكوبون تظل موجودة في رسالة واتساب وبيانات الطلب المحلية.
     // لكن لا نرسلها إلى أعمدة غير موجودة في جدول orders.
-    const shippingAddress=[city,address].filter(Boolean).join(" - ");
-    const orderPayload={client_order_id:clientOrderId,user_id:freshUserId,customer_name:name,customer_phone:phone,shipping_address:shippingAddress,country_code:countryCode,currency_code:currencyCode,payment_method:"cod",status:"pending",total:finalTotal};
+    // استخدم أعمدة orders الموجودة في قاعدة البيانات الحالية فقط.
+   const orderPayload={
+     user_id:freshUserId,
+     customer_name:name,
+     phone:phone,
+     country_code:countryCode,
+     address:[city,address].filter(Boolean).join(" - "),
+     notes:[alternatePhone?("هاتف إضافي: "+alternatePhone):"",notes].filter(Boolean).join("\n"),
+     payment_method:"cod",
+     status:"pending",
+     total:finalTotal,
+     shipping_cost:0
+   };
    let orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
-
-   // في حالة انتهاء الـAccess Token لحظة الضغط على التأكيد، نعمل Refresh مرة ثانية ونحاول مرة واحدة.
-   if(orderResult.error && (orderResult.error.code==="401" || /jwt|token|session/i.test(String(orderResult.error.message||"")))){
-     const retry=await sb.auth.refreshSession();
-     if(retry.error || !retry.data?.session?.user) throw orderResult.error;
-     user=retry.data.session.user;
-     orderPayload.user_id=user.id;
-     orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
-   }
-
-   if(orderResult.error && orderResult.error.code==="23505" && /client_order_id/i.test(String(orderResult.error.message||""))){
-     const existing=await sb.from("orders").select("id,order_number,created_at").eq("client_order_id",clientOrderId).eq("user_id",freshUserId).maybeSingle();
-     if(existing.error||!existing.data) throw orderResult.error;
-     orderResult={data:existing.data,error:null};
-   }
 
    if(orderResult.error){
      if(orderResult.error.code==="23503" && msg.includes("orders_user_id_fkey")){
@@ -273,7 +269,6 @@ body{background:#f5f7f8}
    const orderText=["طلب جديد من OZZI","","رقم الطلب: #"+order.order_number,"العميل: "+name,"الهاتف: "+phone,alternatePhone?"الهاتف الإضافي: "+alternatePhone:"","الدولة: "+countryName,"المدينة / المحافظة: "+city,"العنوان: "+address,notes?"ملاحظات: "+notes:"","","المنتجات:",...lines,"","قيمة المنتجات: "+money(subtotal),discount>0?"خصم الكوبون ("+appliedCoupon.code+"): -"+money(discount):"","الشحن: مجاني","الإجمالي النهائي: "+money(finalTotal),"طريقة الدفع: الدفع عند الاستلام"].filter(Boolean).join("\n");
    localStorage.setItem("ozzi_last_order",JSON.stringify({id:order.id,order_number:order.order_number,user_id:user.id,customer_name:name,phone,alternatePhone,countryCode,city,address,notes,total:finalTotal,subtotal,discount,couponCode:appliedCoupon?.code||"",items:cart,created_at:order.created_at}));
    window.ozziCart.clearCart();
-   sessionStorage.removeItem("ozzi_checkout_order_id");
    setMessage("تم إنشاء الطلب بنجاح — رقم الطلب #"+order.order_number,"success");submit.textContent="تم تأكيد الطلب ✓";
    window.open("https://wa.me/201013532567?text="+encodeURIComponent(orderText),"_blank");
    setTimeout(()=>window.location.replace("orders.html"),1200);
