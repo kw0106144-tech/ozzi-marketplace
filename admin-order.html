@@ -69,7 +69,7 @@ const params=new URLSearchParams(location.search), orderId=params.get("id");
 function show(t,ok){msg.textContent=t;msg.className="message show "+(ok?"ok":"err")}
 const currencySymbols={EG:"ج.م",SA:"ر.س",AE:"د.إ",IQ:"د.ع",OM:"ر.ع"};
 function money(v,currencyCode){return new Intl.NumberFormat("ar-EG").format(Number(v||0))+" "+(currencySymbols[currencyCode]||"ج.م")}
-function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",""":"&quot;","'":"&#039;"}[m]))}
+function esc(v){return String(v??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m]||""))}
 try{
 if(!orderId)throw new Error("رقم الطلب غير موجود.");
 const sb=window.ozziGetSupabase(), {data:sd,error:se}=await sb.auth.getSession();
@@ -85,9 +85,9 @@ if(ie)throw ie;
 document.getElementById("title").textContent="تفاصيل الطلب #"+o.order_number;
 document.getElementById("date").textContent="تم إنشاء الطلب: "+new Date(o.created_at).toLocaleString("ar-EG");
 const shippingText=String(o.shipping_address||"");
-const cityMatch=shippingText.match(/(?:^|\n)المدينة \/ المحافظة:\\s*(.*?)(?:\n|$)/);
-const addressMatch=shippingText.match(/(?:^|\n)العنوان:\\s*(.*?)(?:\n|$)/);
-const notesMatch=shippingText.match(/(?:^|\n)ملاحظات:\\s*(.*?)(?:\n|$)/);
+const cityMatch=shippingText.match(/(?:^|\n)المدينة \/ المحافظة:\s*(.*?)(?:\n|$)/);
+const addressMatch=shippingText.match(/(?:^|\n)العنوان:\s*(.*?)(?:\n|$)/);
+const notesMatch=shippingText.match(/(?:^|\n)ملاحظات:\s*(.*?)(?:\n|$)/);
 const city=cityMatch?cityMatch[1].trim():"";
 const address=addressMatch?addressMatch[1].trim():shippingText;
 const notes=notesMatch?notesMatch[1].trim():"لا توجد";
