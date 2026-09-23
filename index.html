@@ -633,6 +633,25 @@
     .product-filters select{width:100%;padding:12px 13px;border:1px solid var(--ozzi-border);border-radius:12px;background:#fff;color:var(--ozzi-text);font-weight:800;outline:none;cursor:pointer}
     .product-filters select:focus{border-color:var(--ozzi-primary);box-shadow:0 0 0 4px rgba(27,145,183,.1)}
 
+
+    /* Mobile header menu */
+    .mobile-menu-toggle{display:none;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;width:46px;height:44px;border-radius:12px;cursor:pointer;align-items:center;justify-content:center;flex-direction:column;gap:5px}
+    .mobile-menu-toggle span{display:block;width:21px;height:2px;background:#fff;border-radius:99px;transition:.2s ease}
+    .mobile-menu-panel{display:flex;align-items:center}
+    @media(max-width:650px){
+      .nav{position:relative;gap:10px}
+      .brand{min-width:0;flex:1}
+      .mobile-menu-toggle{display:flex;order:3;flex:0 0 auto}
+      .mobile-menu-panel{display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;background:rgba(7,25,35,.99);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px;box-shadow:0 18px 45px rgba(0,0,0,.28);z-index:120}
+      .mobile-menu-panel.open{display:block}
+      .mobile-menu-panel .nav-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+      .mobile-menu-panel .nav-actions .btn{width:100%;min-height:44px;padding:9px 8px;font-size:12px;white-space:nowrap}
+      .mobile-menu-panel .nav-actions .cart-icon-btn{width:100%;min-width:0;height:44px}
+      .mobile-menu-panel .nav-actions .user-country-flag{width:100%;height:44px}
+      .mobile-menu-panel .nav-actions .profile-btn{width:100%}
+      .mobile-menu-panel .nav-actions [data-auth="logout"]{grid-column:1/-1}
+    }
+
     /* Responsive */
     @media (max-width: 950px) {
       .hero-inner {
@@ -738,6 +757,10 @@
         <span class="brand-text">MORE THAN STORE</span>
       </a>
 
+      <button class="mobile-menu-toggle" type="button" aria-label="فتح قائمة الموقع" aria-expanded="false" aria-controls="ozziMobileMenu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="mobile-menu-panel" id="ozziMobileMenu">
       <div class="nav-actions">
         <a class="btn btn-outline cart-link cart-icon-btn" href="cart.html" aria-label="سلة التسوق" title="السلة">
           <svg class="cart-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="20" r="1.6" fill="currentColor"/><circle cx="18" cy="20" r="1.6" fill="currentColor"/></svg>
@@ -759,6 +782,7 @@
         <button class="btn btn-outline" type="button" data-auth="logout" style="display: none;" onclick="logoutUser()">
           تسجيل الخروج
         </button>
+      </div>
       </div>
 
     </div>
@@ -1160,5 +1184,23 @@ function bindCartButtons(){
     window.addEventListener("ozzi:cart-updated",updateCartCount);window.addEventListener("ozzi:favorites-changed",()=>bindFavoriteButtons());
   </script>
 
+
+<script>
+(function(){
+  const toggle=document.querySelector('.mobile-menu-toggle');
+  const menu=document.getElementById('ozziMobileMenu');
+  if(!toggle||!menu)return;
+  toggle.addEventListener('click',function(){
+    const open=menu.classList.toggle('open');
+    toggle.setAttribute('aria-expanded',String(open));
+  });
+  menu.addEventListener('click',function(e){
+    if(e.target.closest('a')){menu.classList.remove('open');toggle.setAttribute('aria-expanded','false');}
+  });
+  document.addEventListener('click',function(e){
+    if(!menu.contains(e.target)&&!toggle.contains(e.target)){menu.classList.remove('open');toggle.setAttribute('aria-expanded','false');}
+  });
+})();
+</script>
 </body>
 </html>
