@@ -35,7 +35,15 @@
       <h2 style="margin-top:0">1) جلب المنتجات</h2>
       <div class="field"><label>رابط صفحة المنتجات في Dukan</label><input id="sourceUrl" class="input" value="https://taager.com/dukan/products" placeholder="https://taager.com/dukan/products"></div>
       <div class="actions"><button id="fetchBtn" class="btn primary">محاولة الجلب تلقائيًا</button><button id="clearBtn" class="btn outline">مسح</button></div>
-      <p class="hint">الأفضل الآن: استخدم زر <b>تحميل الصفحة من جهازك</b>. افتح صفحة المنتجات في Dukan وأنت مسجل دخول، ثم اضغط الزر وسيطلب منك اختيار ملف HTML محفوظ من المتصفح.</p><div class="actions"><button id="fileBtn" class="btn outline">📄 تحميل HTML محفوظ</button><input id="fileInput" type="file" accept=".html,.htm,text/html" class="hidden"></div><div class="field"><label>أو الصق HTML هنا</label><textarea id="htmlInput" placeholder="الصق محتوى HTML الكامل هنا..."></textarea></div><div class="actions"><button id="parseBtn" class="btn outline">تحليل HTML</button></div>
+      <p class="hint">الأفضل الآن: استخدم زر <b>تحميل الصفحة من جهازك</b>. افتح صفحة المنتجات في Dukan وأنت مسجل دخول، ثم اضغط الزر وسيطلب منك اختيار ملف HTML محفوظ من المتصفح.</p><div class="actions"><button id="jsonBtn" class="btn outline">📦 رفع ملف JSON المستخرج</button><input id="jsonInput" type="file" accept=".json,application/json" class="hidden"></div>
+      <div class="panel" style="background:#f8fafb;margin:12px 0 0;padding:14px;border-radius:12px;border:1px dashed #cfd8df">
+        <strong>الطريقة الصحيحة مع Dukan</strong>
+        <p class="hint" style="margin:7px 0">صفحة Dukan عندك تُحمّل المنتجات داخل المتصفح بعد تسجيل الدخول، لذلك حفظ HTML وحده لا يحتوي على المنتجات. استخدم سكربت الاستخراج التالي من نفس صفحة Dukan المفتوحة عندك، وسيحمّل ملف JSON جاهزًا للاستيراد هنا.</p>
+        <textarea id="extractScript" readonly style="min-height:230px;font-size:11px;direction:ltr;text-align:left"></textarea>
+        <div class="actions" style="margin-top:9px"><button id="copyScript" class="btn primary">📋 نسخ سكربت الاستخراج</button></div>
+      </div>
+      <div class="field" style="margin-top:14px"><label>أو الصق JSON المستخرج هنا</label><textarea id="jsonInputText" placeholder='[{"name":"...","price":999,"original_price":1299,"discount_percent":23,"category":"إلكترونيات","image_url":"..."}]'></textarea></div>
+      <div class="actions"><button id="parseJsonBtn" class="btn outline">تحليل JSON</button></div>
     </div>
     <div class="panel">
       <h2 style="margin-top:0">2) حالة الاستيراد</h2>
@@ -127,7 +135,30 @@ async function fetchUrl(){
    show("الجلب المباشر لم ينجح: "+e.message+" — استخدم HTML البديل الموجود أسفل الرابط.");
  }
 }
-function parseInput(htmlOverride){const html=(htmlOverride??$("htmlInput").value).trim();if(!html){show("لم يتم العثور على HTML. احفظ صفحة المنتجات من Dukan كملف HTML ثم اخترها هنا.");return}products=parseDukanHtml(html);render();$("statusText").textContent=products.length?"تم التحليل":"لم يتم العثور";if(products.length)show("تم استخراج "+products.length+" منتج. راجع البيانات قبل الاستيراد.",true);else show("الملف لا يحتوي على جدول المنتجات في HTML الذي تم حفظه. سنحتاج استخراج البيانات من صفحة المتجر نفسها.");}
+function normalizeImportedItem(p){
+ const x={...p};
+ x.name=String(x.name||x.name_ar||x.title||"").trim();
+ x.category=normalizeCategory(x.category||"");
+ x.price=Number(x.price||x.current_price||0)||0;
+ x.original_price=Number(x.original_price||x.before_discount||x.old_price||0)||null;
+ x.description=String(x.description||"").trim();
+ x.sku=String(x.sku||"").trim();
+ x.image_url=String(x.image_url||x.image||"").trim();
+ x.source_url=String(x.source_url||x.url||x.detail_url||"").trim();
+ x.selected=true;
+ return x;
+}
+function parseJsonData(raw){
+ try{
+   const parsed=JSON.parse(raw);
+   const arr=Array.isArray(parsed)?parsed:(Array.isArray(parsed.products)?parsed.products:[]);
+   products=arr.map(normalizeImportedItem).filter(p=>p.name&&p.price>0);
+   render();
+   $("statusText").textContent=products.length?"تم تحليل JSON":"لم يتم العثور";
+   if(products.length)show("تم استخراج "+products.length+" منتج من JSON. راجع البيانات قبل الاستيراد.",true);
+   else show("ملف JSON صالح لكن لا توجد منتجات قابلة للاستيراد.");
+ }catch(e){show("JSON غير صالح: "+e.message)}
+}
 async function importSelected(){
  const selected=products.filter(p=>p.selected);if(!selected.length){show("حدد منتجًا واحدًا على الأقل.");return}
  $("importBtn").disabled=true;$("statusText").textContent="جاري الاستيراد...";
@@ -155,7 +186,14 @@ async function init(){
   currentUser=data.session.user;
   const role=await sb.from("admin_roles").select("role").eq("user_id",currentUser.id).maybeSingle();
   if(role.error||!role.data||!["admin","manager"].includes(role.data.role)){show("ليس لديك صلاحية الدخول إلى المستورد.");setTimeout(()=>location.href="index.html",1800);return}
-  $("fetchBtn").onclick=fetchUrl;$("parseBtn").onclick=()=>parseInput();$("fileBtn").onclick=()=>$("fileInput").click();$("fileInput").addEventListener("change",e=>{const f=e.target.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=()=>parseInput(String(reader.result||""));reader.readAsText(f)});$("importBtn").onclick=importSelected;
+  const extractScript = `(()=>{const clean=s=>String(s||"").replace(/\\s+/g," ").trim();const money=s=>{const m=clean(s).match(/(?:ج\\.م|جنيه|EGP|£)?\\s*(\\d[\\d,]*(?:\\.\\d+)?)/g)||[];return m.map(x=>Number(x.replace(/[^0-9.]/g,""))).filter(Boolean)};const rows=[...document.querySelectorAll("table tbody tr,table tr")];const out=[];const seen=new Set();for(const row of rows){const imgs=[...row.querySelectorAll("img")];const cells=[...row.querySelectorAll("td")];const text=clean(row.innerText||row.textContent);if(!text||!imgs.length)continue;const prices=money(text);if(!prices.length)continue;const lines=[...(row.innerText||"").split(/\\n+/)].map(clean).filter(Boolean);const name=lines.find(x=>x.length>3&&!/^(ج\\.م|EGP|جنيه|electronics|General|toys|beauty|home|fashion)$/i.test(x))||lines[0]||"منتج";const cat=(text.match(/electronics|General|toys|beauty|home|fashion|إلكترونيات|جمال|أطفال|منزل|ملابس/i)||[])[0]||"أخرى";const struck=[...row.querySelectorAll("s,del,[style*=line-through]")].map(x=>money(x.innerText||"")[0]).filter(Boolean)[0];const discount=(text.match(/(\\d{1,3})\\s*%/)||[])[1];const image=imgs.find(x=>x.currentSrc||x.src)?.currentSrc||imgs[0]?.src||"";const link=row.querySelector("a[href]")?.href||"";const key=(name+"|"+image).toLowerCase();if(seen.has(key))continue;seen.add(key);const current=struck&&struck>prices[0]?prices[0]:prices[prices.length-1];const old=struck||((prices.length>1&&prices[0]>current)?prices[0]:null);out.push({name:name.replace(/^[-•]+/,"").trim(),category:cat,price:current,original_price:old,discount_percent:discount?Number(discount):null,image_url:image,source_url:link,description:"",sku:""});}const blob=new Blob([JSON.stringify({source:location.href,exported_at:new Date().toISOString(),products:out},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ozzi-dukan-products.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);alert("تم استخراج "+out.length+" منتج. تم تنزيل ozzi-dukan-products.json");})();`;
+$("extractScript").value=extractScript;
+$("fetchBtn").onclick=fetchUrl;
+$("jsonBtn").onclick=()=>$("jsonInput").click();
+$("jsonInput").addEventListener("change",e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>parseJsonData(String(r.result||""));r.readAsText(f)});
+$("parseJsonBtn").onclick=()=>parseJsonData($("jsonInputText").value);
+$("copyScript").onclick=async()=>{try{await navigator.clipboard.writeText($("extractScript").value);show("تم نسخ سكربت الاستخراج. افتح Dukan والصقه في Console ثم Enter.",true)}catch(e){show("لم أستطع النسخ تلقائيًا. حدّد السكربت وانسخه يدويًا.")}};
+$("importBtn").onclick=importSelected;
   $("selectAll").onclick=()=>{products.forEach(p=>p.selected=true);render()};
   $("master").onchange=e=>{products.forEach(p=>p.selected=e.target.checked);render()};
   $("clearBtn").onclick=()=>{products=[];$("htmlInput").value="";render();$("progressBar").style.width="0";$("statusText").textContent="جاهز"};
