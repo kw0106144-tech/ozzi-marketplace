@@ -185,6 +185,7 @@ async function createOrder(e){
    customer_name:name,
    customer_phone:phone,
    country_code:countryCode,
+   shipping_address:"المدينة / المحافظة: "+city+"\nالعنوان: "+address+(notes?"\nملاحظات: "+notes:""),
    payment_method:"cod",
    status:"pending",
    total:finalTotal
