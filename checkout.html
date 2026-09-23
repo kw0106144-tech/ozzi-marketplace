@@ -260,7 +260,7 @@ body{background:#f5f7f8}
      throw orderResult.error;
    }
    const order=orderResult.data;
-   const orderItems=cart.map(item=>{const unitPrice=Number(item.price)||0;const quantity=Number(item.quantity)||1;return {order_id:order.id,product_id:String(item.id),product_name:item.name||"منتج",unit_price:unitPrice,quantity:quantity};});
+   const orderItems=cart.map(item=>{const unitPrice=Number(item.price)||0;const quantity=Math.max(1,Number(item.quantity)||1);const totalPrice=unitPrice*quantity;return {order_id:order.id,product_id:String(item.id),product_name:item.name||"منتج",unit_price:unitPrice,quantity:quantity,total_price:totalPrice};});
    const itemsResult=await sb.from("order_items").insert(orderItems);if(itemsResult.error)throw itemsResult.error;
    const lines=cart.map((item,i)=>(i+1)+"- "+(item.name||"منتج")+" × "+Number(item.quantity)+" = "+money(Number(item.price)*Number(item.quantity)));
    const orderText=["طلب جديد من OZZI","","رقم الطلب: #"+order.order_number,"العميل: "+name,"الهاتف: "+phone,alternatePhone?"الهاتف الإضافي: "+alternatePhone:"","الدولة: "+countryName,"المدينة / المحافظة: "+city,"العنوان: "+address,notes?"ملاحظات: "+notes:"","","المنتجات:",...lines,"","قيمة المنتجات: "+money(subtotal),discount>0?"خصم الكوبون ("+appliedCoupon.code+"): -"+money(discount):"","الشحن: مجاني","الإجمالي النهائي: "+money(finalTotal),"طريقة الدفع: الدفع عند الاستلام"].filter(Boolean).join("\n");
