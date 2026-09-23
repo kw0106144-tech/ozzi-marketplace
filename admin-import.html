@@ -155,26 +155,24 @@ function normalizeImportedItem(p){
  return x;
 }
 function parseCsvText(raw){
- const lines=String(raw||"").replace(/^\\uFEFF/,"").split(/\\r?\\n/).filter(x=>x.trim());
+ const text=String(raw||"").replace(/^\uFEFF/,"");
+ if(!text.trim())return [];
+ const firstLine=(text.split(/\r?\n/,1)[0]||"");
+ const delimiter=(firstLine.includes(";")&&!firstLine.includes(",")?";":firstLine.includes("\t")?"\t":",");
+ const parseLine=line=>{const out=[];let cur="",quoted=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==="\\"){cur+=ch;continue;}if(ch==='"'){if(quoted&&line[i+1]==='"'){cur+='"';i++;}else quoted=!quoted;}else if(ch===delimiter&&!quoted){out.push(cur.trim());cur="";}else cur+=ch;}out.push(cur.trim());return out.map(v=>v.replace(/^"|"$/g,"").trim())};
+ const lines=[];let current="",quoted=false;for(let i=0;i<text.length;i++){const ch=text[i];if(ch==='"'){if(quoted&&text[i+1]==='"'){current+='"';i++;continue;}quoted=!quoted;}if(ch==="\n"&&!quoted){lines.push(current.replace(/\r$/,""));current="";}else current+=ch;}if(current.trim())lines.push(current);
  if(!lines.length)return [];
- const parseLine=line=>{const out=[];let cur="",q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='\\\"'){if(q&&line[i+1]==='\\\"'){cur+='\\\"';i++;}else q=!q}else if(ch===','&&!q){out.push(cur.trim());cur=""}else cur+=ch}out.push(cur.trim());return out};
- const headers=parseLine(lines[0]).map(h=>h.replace(/^\\\"|\\\"$/g,"").trim().toLowerCase());
- const aliases={
-  name:["name","product_name","title","اسم المنتج","المنتج","الاسم"],
-  description:["description","الوصف"],
-  category:["category","التصنيف","القسم"],
-  price:["price","current_price","السعر","السعر الحالي"],
-  original_price:["original_price","before_discount","old_price","السعر قبل الخصم","السعر القديم"],
-  sku:["sku","product_code","code","كود المنتج","الكود"],
-  image_url:["image_url","image","image link","رابط الصورة","الصورة"],
-  stock:["stock","quantity","المخزون","الكمية"],
-  country_code:["country_code","country","الدولة"]
- };
- const indexOf=k=>{const a=aliases[k]||[];return headers.findIndex(h=>a.some(x=>h===String(x).toLowerCase()))};
- return lines.slice(1).map(line=>{const c=parseLine(line);const o={};Object.keys(aliases).forEach(k=>{const i=indexOf(k);o[k]=i>=0?c[i]||"":""});return normalizeImportedItem(o)}).filter(p=>p.name);
+ const headers=parseLine(lines[0]).map(h=>String(h).toLowerCase().replace(/[_-]+/g," ").replace(/\s+/g," ").trim());
+ const aliases={name:["name","product_name","productname","title","اسم المنتج","المنتج","الاسم"],description:["description","desc","الوصف"],category:["category","category_name","التصنيف","القسم","الفئة"],price:["price","current_price","sale_price","السعر","السعر الحالي","سعر البيع"],original_price:["original_price","before_discount","old_price","regular_price","السعر قبل الخصم","السعر القديم","قبل الخصم"],sku:["sku","product_code","code","كود المنتج","الكود"],image_url:["image_url","image","image link","image_link","رابط الصورة","الصورة"],stock:["stock","quantity","qty","المخزون","الكمية"],country_code:["country_code","country","الدولة"]};
+ const normHeader=s=>String(s||"").toLowerCase().replace(/[_-]+/g," ").replace(/\s+/g," ").trim();
+ const normalized=headers.map(normHeader);
+ const indexOf=k=>{const a=(aliases[k]||[]).map(normHeader);return normalized.findIndex(h=>a.includes(h))};
+ const toNumber=v=>{let s=String(v??"").trim().replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d));s=s.replace(/[^0-9.,-]/g,"");if(s.includes(",")&&s.includes("."))s=s.lastIndexOf(",")>s.lastIndexOf(".")?s.replace(/\./g,"").replace(",","."):s.replace(/,/g,"");else if(s.includes(",")){const p=s.split(",");s=p.length===2&&p[1].length<=2?p[0]+"."+p[1]:p.join("");}const n=Number(s);return Number.isFinite(n)?n:0};
+ return lines.slice(1).map(line=>{const c=parseLine(line),o={};Object.keys(aliases).forEach(k=>{const i=indexOf(k);o[k]=i>=0?(c[i]||""):""});o.price=toNumber(o.price);o.original_price=toNumber(o.original_price);o.stock=Math.max(0,Math.floor(toNumber(o.stock)));return normalizeImportedItem(o)}).filter(p=>p.name);
 }
-async function parseCsvFile(file){const r=new FileReader();r.onload=()=>{try{products=parseCsvText(String(r.result||"")).filter(p=>p.name);render();show("تم تحليل "+products.length+" منتج من CSV. راجع البيانات قبل الاستيراد.",true)}catch(e){show("تعذر قراءة CSV: "+e.message)}};r.readAsText(file,"UTF-8")}
-function downloadCsvTemplate(){const csv="name,description,category,price,original_price,sku,image_url,stock,country_code\\nمنتج تجريبي,,أخرى,999,1299,SKU-001,https://example.com/image.jpg,10,EG\\n";const blob=new Blob(["\\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ozzi-products-template.csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function parseCsvFile(file){const r=new FileReader();r.onload=()=>{try{const parsed=parseCsvText(String(r.result||""));if(!parsed.length){show("ملف CSV فاضي أو عناوين الأعمدة غير صحيحة.");return}products=parsed;render();show("تم تحليل "+products.length+" منتج من CSV. راجع البيانات قبل الاستيراد.",true)}catch(e){show("تعذر قراءة CSV: "+e.message)}};r.onerror=()=>show("تعذر فتح ملف CSV.");r.readAsText(file,"UTF-8")}
+function csvEscape(v){return '"' + String(v??"").replace(/"/g,'""') + '"'}
+function downloadCsvTemplate(){const header=["name","description","category","price","original_price","sku","image_url","stock","country_code"];const row=["منتج تجريبي","وصف المنتج","أخرى","999","1299","SKU-001","https://example.com/image.jpg","10","EG"];const csv=header.map(csvEscape).join(",")+"\r\n"+row.map(csvEscape).join(",")+"\r\n";const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ozzi-products-template.csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function parseJsonData(raw){
  try{
    const parsed=JSON.parse(raw);
