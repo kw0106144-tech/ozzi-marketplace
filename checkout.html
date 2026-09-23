@@ -236,7 +236,10 @@ body{background:#f5f7f8}
    user=refreshed.data.session.user;
    const freshUserId=user.id;
 
-   // استخدم فقط أعمدة orders الموجودة فعليًا في قاعدة البيانات الحالية.\n   // بيانات الهاتف والعنوان والكوبون تظل موجودة في رسالة واتساب وبيانات الطلب المحلية،\n   // لكن لا نرسلها إلى أعمدة غير موجودة في جدول orders.\n   const orderPayload={user_id:freshUserId,customer_name:name,country_code:countryCode,payment_method:"cod",status:"pending",total:finalTotal};
+    // استخدم فقط أعمدة orders الموجودة فعليًا في قاعدة البيانات الحالية.
+    // بيانات الهاتف والعنوان والكوبون تظل موجودة في رسالة واتساب وبيانات الطلب المحلية.
+    // لكن لا نرسلها إلى أعمدة غير موجودة في جدول orders.
+    const orderPayload={user_id:freshUserId,customer_name:name,country_code:countryCode,payment_method:"cod",status:"pending",total:finalTotal};
    let orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
 
    // في حالة انتهاء الـAccess Token لحظة الضغط على التأكيد، نعمل Refresh مرة ثانية ونحاول مرة واحدة.
