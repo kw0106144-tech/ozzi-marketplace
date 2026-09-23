@@ -200,8 +200,6 @@ body{background:#f5f7f8}
     return;
    }
    user=verified.data.user;
-   clientOrderId=sessionStorage.getItem("ozzi_checkout_order_id")||crypto.randomUUID();
-   sessionStorage.setItem("ozzi_checkout_order_id",clientOrderId);
    const meta=user.user_metadata||{};
    countryCode=String(meta.country_code||localStorage.getItem("ozzi_country")||"EG").toUpperCase();
    countryName=countries[countryCode];
@@ -245,21 +243,14 @@ body{background:#f5f7f8}
    const orderPayload={
      user_id:freshUserId,
      customer_name:name,
-     phone:phone,
      country_code:countryCode,
-     address:[city,address].filter(Boolean).join(" - "),
-     notes:[alternatePhone?("هاتف إضافي: "+alternatePhone):"",notes].filter(Boolean).join("\n"),
      payment_method:"cod",
      status:"pending",
-     total:finalTotal,
-     shipping_cost:0
+     total:finalTotal
    };
    let orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
 
    if(orderResult.error){
-     if(orderResult.error.code==="23503" && msg.includes("orders_user_id_fkey")){
-       throw new Error("الحساب مسجل دخول بشكل صحيح، لكن قاعدة البيانات رفضت ربط الطلب بالحساب. لم يتم تسجيل خروجك ولم يتم حذف السلة. راجع إعداد Foreign Key لجدول orders.");
-     }
      throw orderResult.error;
    }
    const order=orderResult.data;
