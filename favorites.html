@@ -64,6 +64,9 @@ body{background:#f6f8fa}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js?v=20260923"></script>
 <script>
+// Favorites page is intentionally independent from orders/customer fields.
+// It must never query the orders table.
+
 (function(){
 "use strict";
 var sb=null,uid=null;
