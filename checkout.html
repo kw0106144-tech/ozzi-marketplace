@@ -103,7 +103,8 @@ async function init(){
   cart=window.ozziCart.getCart();
   if(!cart.length){document.getElementById("empty").style.display="block";return}
   document.getElementById("app").style.display="grid";
-  document.getElementById("country").value=countryNames[countryCode];\n  populateCities();
+  document.getElementById("country").value=countryNames[countryCode];
+  populateCities();
 
   document.getElementById("name").value=user.user_metadata?.full_name||"";
   document.getElementById("phone").value=user.user_metadata?.phone||"";
