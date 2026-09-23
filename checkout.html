@@ -155,6 +155,7 @@ async function createOrder(e){
    customer_phone:phone,
    shipping_address:shippingAddress,
    country_code:countryCode,
+   currency_code:({EG:"EGP",SA:"SAR",AE:"AED",IQ:"IQD",OM:"OMR"})[countryCode]||"EGP",
    payment_method:"cod",
    status:"pending",
    total:subtotal
