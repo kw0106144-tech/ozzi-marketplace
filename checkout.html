@@ -145,21 +145,16 @@ async function createOrder(e){
   if(subtotal<=0)throw new Error("لا يوجد مبلغ صالح للطلب.");
 
   const clientOrderId=crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random();
+  // الأعمدة المتاحة حاليًا في جدول orders هي فقط هذه الحقول الأساسية.
+  // بيانات التوصيل التفصيلية تظل في رسالة واتساب وبيانات الطلب المحلية،
+  // حتى لا يفشل إنشاء الطلب بسبب أعمدة غير موجودة في قاعدة البيانات الحالية.
   const orderPayload={
    user_id:user.id,
    customer_name:name,
-   phone:phone,
    country_code:countryCode,
-   alternate_phone:alternatePhone||null,
-   city:city,
-   address:address,
-   notes:notes||null,
    payment_method:"cod",
    status:"pending",
-   total:subtotal,
-   shipping_cost:0,
-   discount_amount:0,
-   client_order_id:clientOrderId
+   total:subtotal
   };
 
   const orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
