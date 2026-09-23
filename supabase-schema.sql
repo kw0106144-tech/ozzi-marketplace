@@ -60,6 +60,7 @@ create table if not exists public.order_items (
   line_total numeric(12,2) generated always as (unit_price * quantity) stored
 );
 create index if not exists order_items_order_id_idx on public.order_items(order_id);
+create unique index if not exists order_items_order_product_uidx on public.order_items(order_id, product_id);
 
 create table if not exists public.admin_roles (
   user_id uuid primary key references auth.users(id) on delete cascade,
