@@ -77,7 +77,7 @@ if(se||!sd.session){location.replace("login.html");return}
 const {data:role,error:re}=await sb.from("admin_roles").select("role").eq("user_id",sd.session.user.id).maybeSingle();
 if(re||!role||!["admin","manager"].includes(role.role)){location.replace("index.html");return}
 
-const {data:o,error:oe}=await sb.from("orders").select("id,order_number,customer_name,customer_phone,country_code,shipping_address,currency_code,payment_method,status,total,shipping_cost,created_at,updated_at").eq("id",orderId).single();
+const {data:o,error:oe}=await sb.from("orders").select("id,order_number,customer_name,customer_phone,country_code,shipping_address,currency_code,payment_method,status,total,created_at,updated_at").eq("id",orderId).single();
 if(oe)throw oe;
 const {data:items,error:ie}=await sb.from("order_items").select("product_id,product_name,unit_price,quantity").eq("order_id",orderId);
 if(ie)throw ie;
