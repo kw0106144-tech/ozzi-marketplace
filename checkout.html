@@ -99,8 +99,11 @@ body{background:#f5f7f8}
      <form id="checkoutForm" class="checkout-form">
       <div class="field"><label for="fullName">الاسم بالكامل</label><input id="fullName" autocomplete="name" required></div>
       <div class="field"><label for="phone">رقم الهاتف</label><input id="phone" type="tel" autocomplete="tel" required></div>
+      <div class="field"><label for="alternatePhone">رقم تليفون إضافي <span style="color:#8b959b;font-weight:700">(اختياري)</span></label><input id="alternatePhone" type="tel" autocomplete="tel-national" placeholder="رقم آخر للتواصل عند الحاجة"></div>
       <div class="field"><label>الدولة</label><div id="accountCountry" class="readonly-country">جاري تحديد الدولة...</div></div>
-      <div class="field"><label for="address">العنوان بالتفصيل</label><textarea id="address" placeholder="المحافظة، المنطقة، الشارع، رقم المبنى..." required></textarea></div>
+      <div class="field"><label for="city">المدينة / المحافظة</label><select id="city" required disabled><option value="">جاري تحميل المدن...</option></select></div>
+      <div class="field"><label for="address">العنوان بالتفصيل</label><textarea id="address" placeholder="المنطقة، الشارع، رقم المبنى..." required></textarea></div>
+      <div class="field"><label for="coupon">كوبون الخصم <span style="color:#8b959b;font-weight:700">(اختياري)</span></label><div style="display:flex;gap:8px"><input id="coupon" placeholder="اكتب كود الخصم" autocomplete="off"><button id="applyCoupon" type="button" style="border:0;border-radius:12px;background:#071923;color:#fff;padding:0 16px;font-weight:900;cursor:pointer;white-space:nowrap">تطبيق</button></div><div id="couponMessage" style="font-size:12px;line-height:1.7"></div></div>
       <div class="field"><label for="notes">ملاحظات إضافية</label><textarea id="notes" placeholder="أي ملاحظات خاصة بالطلب (اختياري)"></textarea></div>
       <div class="field"><label for="payment">طريقة الدفع</label><select id="payment"><option value="cod">الدفع عند الاستلام</option></select></div>
       <button id="submitOrder" class="checkout-submit" type="submit">تأكيد الطلب</button>
@@ -113,6 +116,7 @@ body{background:#f5f7f8}
      <h2>ملخص الطلب</h2>
      <div id="summaryItems" class="summary-items"></div>
      <div class="summary-row"><span>قيمة المنتجات</span><strong id="summarySubtotal">0</strong></div>
+     <div class="summary-row" id="discountRow" style="display:none;color:#067647"><span>خصم الكوبون</span><strong id="summaryDiscount">0</strong></div>
      <div class="summary-row summary-shipping"><span>الشحن</span><span class="free-badge">مجاني</span></div>
      <div class="summary-total"><span>الإجمالي النهائي</span><span id="summaryTotal">0</span></div>
     </aside>
@@ -130,22 +134,57 @@ body{background:#f5f7f8}
  "use strict";
  const countries={EG:"مصر",SA:"السعودية",AE:"الإمارات",IQ:"العراق",OM:"سلطنة عُمان"};
  const symbols={EG:"ج.م",SA:"ر.س",AE:"د.إ",IQ:"ع.ع",OM:"ر.ع"};
- const loading=document.getElementById("loadingState");
- const empty=document.getElementById("emptyState");
- const content=document.getElementById("checkoutContent");
- const form=document.getElementById("checkoutForm");
- const submit=document.getElementById("submitOrder");
- const message=document.getElementById("checkoutMessage");
- const itemsBox=document.getElementById("summaryItems");
- const subtotalBox=document.getElementById("summarySubtotal");
- const totalBox=document.getElementById("summaryTotal");
- let sb=null,user=null,countryCode="",countryName="",cart=[],subtotal=0;
+ const cities={
+  EG:["القاهرة","الجيزة","الإسكندرية","الدقهلية","البحر الأحمر","البحيرة","الفيوم","الغربية","الإسماعيلية","المنوفية","المنيا","القليوبية","الوادي الجديد","السويس","أسوان","أسيوط","بني سويف","بورسعيد","دمياط","جنوب سيناء","كفر الشيخ","مطروح","الأقصر","قنا","شمال سيناء","سوهاج"],
+  SA:["الرياض","مكة المكرمة","المدينة المنورة","القصيم","المنطقة الشرقية","عسير","تبوك","حائل","الحدود الشمالية","جازان","نجران","الباحة","الجوف"],
+  AE:["أبوظبي","دبي","الشارقة","عجمان","أم القيوين","رأس الخيمة","الفجيرة"],
+  IQ:["بغداد","الأنبار","بابل","البصرة","حلبجة","دهوك","القادسية","كربلاء","كركوك","ميسان","المثنى","النجف","نينوى","صلاح الدين","السليمانية","ذي قار","ديالى","واسط"],
+  OM:["مسقط","ظفار","شمال الباطنة","جنوب الباطنة","مسندم","البريمي","الداخلية","شمال الشرقية","جنوب الشرقية","الوسطى"]
+ };
+ const loading=document.getElementById("loadingState"),empty=document.getElementById("emptyState"),content=document.getElementById("checkoutContent"),form=document.getElementById("checkoutForm"),submit=document.getElementById("submitOrder"),message=document.getElementById("checkoutMessage"),itemsBox=document.getElementById("summaryItems"),subtotalBox=document.getElementById("summarySubtotal"),discountRow=document.getElementById("discountRow"),discountBox=document.getElementById("summaryDiscount"),totalBox=document.getElementById("summaryTotal"),cityEl=document.getElementById("city"),couponEl=document.getElementById("coupon"),couponBtn=document.getElementById("applyCoupon"),couponMsg=document.getElementById("couponMessage");
+ let sb=null,user=null,countryCode="",countryName="",cart=[],subtotal=0,discount=0,appliedCoupon=null;
 
  function money(v){return new Intl.NumberFormat("ar-EG").format(Math.round(Number(v)||0))+" "+(symbols[countryCode]||"ج.م")}
  function setMessage(t,type){message.className="checkout-message "+type;message.textContent=t}
  function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
- function validItem(item){
-   return item && item.id && Number(item.price)>0 && Number(item.quantity)>0;
+ function validItem(item){return item&&item.id&&Number(item.price)>0&&Number(item.quantity)>0}
+ function renderCities(){
+  const list=cities[countryCode]||[];
+  cityEl.innerHTML='<option value="">اختر المدينة / المحافظة</option>'+list.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join("");
+  cityEl.disabled=!list.length;
+ }
+ function renderTotals(){
+  const total=Math.max(0,subtotal-discount);
+  subtotalBox.textContent=money(subtotal);
+  discountRow.style.display=discount>0?"flex":"none";
+  discountBox.textContent=discount>0?"-"+money(discount):money(0);
+  totalBox.textContent=money(total);
+ }
+ async function applyCoupon(){
+  const code=couponEl.value.trim().toUpperCase();
+  appliedCoupon=null;discount=0;renderTotals();
+  couponMsg.textContent="";
+  if(!code){couponMsg.textContent="اكتب كود الكوبون أولًا.";couponMsg.style.color="#b42318";return}
+  couponBtn.disabled=true;couponBtn.textContent="جاري التحقق...";
+  try{
+   const r=await sb.from("coupons").select("id,code,discount_type,discount_value,min_order,country_code,active,starts_at,ends_at").eq("code",code).eq("active",true).maybeSingle();
+   if(r.error)throw r.error;
+   const c=r.data;
+   const now=Date.now();
+   if(!c)throw new Error("كود الخصم غير صحيح أو غير فعال.");
+   if(c.country_code&&String(c.country_code).toUpperCase()!==countryCode)throw new Error("هذا الكوبون غير متاح لدولة حسابك.");
+   if(c.starts_at&&now<new Date(c.starts_at).getTime())throw new Error("هذا الكوبون لم يبدأ بعد.");
+   if(c.ends_at&&now>=new Date(c.ends_at).getTime())throw new Error("انتهت صلاحية هذا الكوبون.");
+   if(Number(subtotal)<Number(c.min_order||0))throw new Error("الحد الأدنى لاستخدام الكوبون هو "+money(c.min_order)+".");
+   let value=c.discount_type==="percent"?subtotal*(Number(c.discount_value)/100):Number(c.discount_value);
+   discount=Math.min(Math.max(0,value),subtotal);
+   appliedCoupon={id:c.id,code:c.code};
+   couponMsg.textContent="تم تطبيق الكوبون بنجاح — خصم "+money(discount);
+   couponMsg.style.color="#067647";
+   renderTotals();
+  }catch(e){
+   console.error("Coupon:",e);couponMsg.textContent=e.message||"تعذر التحقق من الكوبون.";couponMsg.style.color="#b42318";
+  }finally{couponBtn.disabled=false;couponBtn.textContent="تطبيق"}
  }
  async function init(){
   try{
@@ -156,116 +195,42 @@ body{background:#f5f7f8}
    const meta=user.user_metadata||{};
    countryCode=String(meta.country_code||localStorage.getItem("ozzi_country")||"EG").toUpperCase();
    countryName=countries[countryCode];
-   if(!countryName) throw new Error("الدولة المرتبطة بالحساب غير صالحة.");
+   if(!countryName)throw new Error("الدولة المرتبطة بالحساب غير صالحة.");
    document.getElementById("fullName").value=meta.full_name||"";
    document.getElementById("phone").value=meta.phone||"";
    document.getElementById("accountCountry").textContent=countryName;
-
+   renderCities();
    cart=window.ozziCart.getCart().filter(validItem);
    if(!cart.length){loading.style.display="none";empty.style.display="block";return}
-
-   // لا نعتمد على نص السعر الموجود في الكارت؛ السعر الرقمي محفوظ في ozzi_cart.
-   subtotal=cart.reduce((sum,item)=>sum+(Number(item.price)*Number(item.quantity)),0);
-   itemsBox.innerHTML=cart.map(item=>{
-    const image=esc(item.image||"");
-    const name=esc(item.name||"منتج");
-    const qty=Number(item.quantity);
-    const price=Number(item.price);
-    return '<div class="summary-item"><img src="'+image+'" alt=""><div class="summary-item-info"><div class="summary-item-name">'+name+'</div><div class="summary-item-meta">'+qty+' × '+money(price)+'</div></div><div class="summary-item-total">'+money(price*qty)+'</div></div>';
-   }).join("");
-   subtotalBox.textContent=money(subtotal);
-   totalBox.textContent=money(subtotal);
-
-   loading.style.display="none";
-   content.style.display="block";
-
-   form.addEventListener("submit",submitOrder);
-  }catch(e){
-   console.error("OZZI CHECKOUT INIT:",e);
-   loading.textContent="تعذر تجهيز صفحة إتمام الطلب. حاول تحديث الصفحة.";
-  }
+   subtotal=cart.reduce((sum,item)=>sum+Number(item.price)*Number(item.quantity),0);
+   itemsBox.innerHTML=cart.map(item=>'<div class="summary-item"><img src="'+esc(item.image||"")+'" alt=""><div class="summary-item-info"><div class="summary-item-name">'+esc(item.name||"منتج")+'</div><div class="summary-item-meta">'+Number(item.quantity)+' × '+money(item.price)+'</div></div><div class="summary-item-total">'+money(Number(item.price)*Number(item.quantity))+'</div></div>').join("");
+   renderTotals();
+   couponBtn.addEventListener("click",applyCoupon);
+   couponEl.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();applyCoupon()}});
+   loading.style.display="none";content.style.display="block";form.addEventListener("submit",submitOrder);
+  }catch(e){console.error("OZZI CHECKOUT INIT:",e);loading.textContent="تعذر تجهيز صفحة إتمام الطلب. حاول تحديث الصفحة."}
  }
-
  async function submitOrder(event){
-  event.preventDefault();
-  if(submit.disabled)return;
+  event.preventDefault();if(submit.disabled)return;
   setMessage("","");submit.disabled=true;submit.textContent="جاري إنشاء الطلب...";
-
   try{
-   const name=document.getElementById("fullName").value.trim();
-   const phone=document.getElementById("phone").value.trim();
-   const address=document.getElementById("address").value.trim();
-   const notes=document.getElementById("notes").value.trim();
-   if(!name||!phone||!address)throw new Error("من فضلك أكمل بيانات التوصيل.");
-
-   // نستخدم فقط الأعمدة الموجودة في قاعدة البيانات الحالية للطلب.
-   // تفاصيل العنوان والهاتف تبقى في رسالة واتساب حتى لا يفشل إنشاء الطلب بسبب أعمدة قديمة غير موجودة.
-   const orderPayload={
-    user_id:user.id,
-    customer_name:name,
-    country_code:countryCode,
-    payment_method:"cod",
-    status:"pending",
-    total:subtotal
-   };
-
+   const name=document.getElementById("fullName").value.trim(),phone=document.getElementById("phone").value.trim(),alternatePhone=document.getElementById("alternatePhone").value.trim(),city=cityEl.value,address=document.getElementById("address").value.trim(),notes=document.getElementById("notes").value.trim();
+   if(!name||!phone||!city||!address)throw new Error("من فضلك أكمل الاسم والهاتف والمدينة والعنوان.");
+   const finalTotal=Math.max(0,subtotal-discount);
+   const orderPayload={user_id:user.id,customer_name:name,country_code:countryCode,payment_method:"cod",status:"pending",total:finalTotal,shipping_cost:0,coupon_code:appliedCoupon?.code||null,discount_amount:discount,city,phone,alternate_phone:alternatePhone||null,address,notes};
    const orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
    if(orderResult.error)throw orderResult.error;
    const order=orderResult.data;
-   if(!order)throw new Error("تعذر إنشاء الطلب.");
-
-   const orderItems=cart.map(item=>({
-    order_id:order.id,
-    product_id:String(item.id),
-    product_name:item.name||"منتج",
-    unit_price:Number(item.price),
-    quantity:Number(item.quantity)
-   }));
-
-   const itemsResult=await sb.from("order_items").insert(orderItems);
-   if(itemsResult.error)throw itemsResult.error;
-
-   const lines=cart.map((item,i)=>
-    (i+1)+"- "+(item.name||"منتج")+" × "+Number(item.quantity)+" = "+money(Number(item.price)*Number(item.quantity))
-   );
-
-   const orderText=[
-    "طلب جديد من OZZI",
-    "",
-    "رقم الطلب: #"+order.order_number,
-    "العميل: "+name,
-    "الهاتف: "+phone,
-    "الدولة: "+countryName,
-    "العنوان: "+address,
-    notes?"ملاحظات: "+notes:"",
-    "",
-    "المنتجات:",
-    ...lines,
-    "",
-    "قيمة المنتجات: "+money(subtotal),
-    "الشحن: مجاني",
-    "الإجمالي النهائي: "+money(subtotal),
-    "طريقة الدفع: الدفع عند الاستلام"
-   ].filter(Boolean).join("\n");
-
-   localStorage.setItem("ozzi_last_order",JSON.stringify({
-    id:order.id,order_number:order.order_number,user_id:user.id,customer_name:name,
-    phone,country_code:countryCode,address,notes,total:subtotal,items:cart,created_at:order.created_at
-   }));
+   const orderItems=cart.map(item=>({order_id:order.id,product_id:String(item.id),product_name:item.name||"منتج",unit_price:Number(item.price),quantity:Number(item.quantity)}));
+   const itemsResult=await sb.from("order_items").insert(orderItems);if(itemsResult.error)throw itemsResult.error;
+   const lines=cart.map((item,i)=>(i+1)+"- "+(item.name||"منتج")+" × "+Number(item.quantity)+" = "+money(Number(item.price)*Number(item.quantity)));
+   const orderText=["طلب جديد من OZZI","","رقم الطلب: #"+order.order_number,"العميل: "+name,"الهاتف: "+phone,alternatePhone?"الهاتف الإضافي: "+alternatePhone:"","الدولة: "+countryName,"المدينة / المحافظة: "+city,"العنوان: "+address,notes?"ملاحظات: "+notes:"","","المنتجات:",...lines,"","قيمة المنتجات: "+money(subtotal),discount>0?"خصم الكوبون ("+appliedCoupon.code+"): -"+money(discount):"","الشحن: مجاني","الإجمالي النهائي: "+money(finalTotal),"طريقة الدفع: الدفع عند الاستلام"].filter(Boolean).join("\n");
+   localStorage.setItem("ozzi_last_order",JSON.stringify({id:order.id,order_number:order.order_number,user_id:user.id,customer_name:name,phone,alternatePhone,countryCode,city,address,notes,total:finalTotal,subtotal,discount,couponCode:appliedCoupon?.code||"",items:cart,created_at:order.created_at}));
    window.ozziCart.clearCart();
-
-   setMessage("تم إنشاء الطلب بنجاح — رقم الطلب #"+order.order_number,"success");
-   submit.textContent="تم تأكيد الطلب ✓";
-
-   const wa="https://wa.me/201013532567?text="+encodeURIComponent(orderText);
-   window.open(wa,"_blank");
-
+   setMessage("تم إنشاء الطلب بنجاح — رقم الطلب #"+order.order_number,"success");submit.textContent="تم تأكيد الطلب ✓";
+   window.open("https://wa.me/201013532567?text="+encodeURIComponent(orderText),"_blank");
    setTimeout(()=>window.location.replace("orders.html"),1200);
-  }catch(e){
-   console.error("OZZI CHECKOUT ORDER:",e);
-   setMessage(e.message||"حدث خطأ أثناء إنشاء الطلب. حاول مرة أخرى.","error");
-   submit.disabled=false;submit.textContent="تأكيد الطلب";
-  }
+  }catch(e){console.error("OZZI CHECKOUT ORDER:",e);setMessage(e.message||"حدث خطأ أثناء إنشاء الطلب. حاول مرة أخرى.","error");submit.disabled=false;submit.textContent="تأكيد الطلب"}
  }
  document.addEventListener("DOMContentLoaded",init);
 })();
