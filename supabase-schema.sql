@@ -356,3 +356,7 @@ update public.orders set country_code='EG' where country_code is null;
 alter table public.orders alter column country_code set default 'EG';
 alter table public.orders alter column country_code set not null;
 alter table public.orders alter column country_id drop not null;
+
+-- Fix live orders payment method constraint
+alter table public.orders drop constraint if exists orders_payment_method_check;
+alter table public.orders add constraint orders_payment_method_check check (payment_method in ('cod'));
