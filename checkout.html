@@ -227,14 +227,33 @@ body{background:#f5f7f8}
    const finalTotal=Math.max(0,subtotal-discount);
    const currencyByCountry={EG:"EGP",SA:"SAR",AE:"AED",IQ:"IQD",OM:"OMR"};
    const currencyCode=currencyByCountry[countryCode]||"EGP";
-   const orderPayload={user_id:user.id,customer_name:name,customer_phone:phone,country_code:countryCode,currency_code:currencyCode,shipping_address:address,payment_method:"cod",status:"pending",total:finalTotal};
-   const orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
+   // جدّد الـSession قبل إنشاء الطلب، ثم استخدم user.id من الـSession الجديدة.
+   // لا نسجّل خروج المستخدم تلقائيًا عند خطأ FK؛ لأن ذلك كان يخفي سبب المشكلة ويضيّع السلة.
+   const refreshed=await sb.auth.refreshSession();
+   if(refreshed.error || !refreshed.data?.session?.user){
+     throw new Error("انتهت جلسة تسجيل الدخول. افتح تسجيل الدخول ثم عد إلى إتمام الطلب.");
+   }
+   user=refreshed.data.session.user;
+   const freshUserId=user.id;
+
+   const orderPayload={user_id:freshUserId,customer_name:name,customer_phone:phone,country_code:countryCode,currency_code:currencyCode,shipping_address:address,payment_method:"cod",status:"pending",total:finalTotal};
+   let orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
+
+   // في حالة انتهاء الـAccess Token لحظة الضغط على التأكيد، نعمل Refresh مرة ثانية ونحاول مرة واحدة.
+   if(orderResult.error && (orderResult.error.code==="401" || /jwt|token|session/i.test(String(orderResult.error.message||"")))){
+     const retry=await sb.auth.refreshSession();
+     if(retry.error || !retry.data?.session?.user) throw orderResult.error;
+     user=retry.data.session.user;
+     orderPayload.user_id=user.id;
+     orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
+   }
+
    if(orderResult.error){
-    const msg=String(orderResult.error.message||"");
-    if(orderResult.error.code==="23503"&&msg.includes("orders_user_id_fkey")){
-      throw new Error("جلسة الحساب الحالية غير صالحة. تم تسجيل الخروج تلقائيًا، سجل الدخول مرة أخرى ثم أعد الطلب.");
-    }
-    throw orderResult.error;
+     const msg=String(orderResult.error.message||"");
+     if(orderResult.error.code==="23503" && msg.includes("orders_user_id_fkey")){
+       throw new Error("الحساب مسجل دخول بشكل صحيح، لكن قاعدة البيانات رفضت ربط الطلب بالحساب. لم يتم تسجيل خروجك ولم يتم حذف السلة. راجع إعداد Foreign Key لجدول orders.");
+     }
+     throw orderResult.error;
    }
    const order=orderResult.data;
    const orderItems=cart.map(item=>({order_id:order.id,product_id:String(item.id),product_name:item.name||"منتج",unit_price:Number(item.price),quantity:Number(item.quantity)}));
