@@ -67,7 +67,8 @@ const countries={EG:"مصر",SA:"السعودية",AE:"الإمارات",IQ:"ا�
 const labels={pending:"قيد المراجعة",confirmed:"تم التأكيد",shipped:"تم الشحن",delivered:"تم التسليم",cancelled:"ملغي"};
 const params=new URLSearchParams(location.search), orderId=params.get("id");
 function show(t,ok){msg.textContent=t;msg.className="message show "+(ok?"ok":"err")}
-function money(v){return new Intl.NumberFormat("ar-EG").format(Number(v||0))+" ج.م"}
+const currencySymbols={EG:"ج.م",SA:"ر.س",AE:"د.إ",IQ:"د.ع",OM:"ر.ع"};
+function money(v,currencyCode){return new Intl.NumberFormat("ar-EG").format(Number(v||0))+" "+(currencySymbols[currencyCode]||"ج.م")}
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",""":"&quot;","'":"&#039;"}[m]))}
 try{
 if(!orderId)throw new Error("رقم الطلب غير موجود.");
@@ -76,26 +77,33 @@ if(se||!sd.session){location.replace("login.html");return}
 const {data:role,error:re}=await sb.from("admin_roles").select("role").eq("user_id",sd.session.user.id).maybeSingle();
 if(re||!role||!["admin","manager"].includes(role.role)){location.replace("index.html");return}
 
-const {data:o,error:oe}=await sb.from("orders").select("id,order_number,customer_name,phone,country_code,address,notes,payment_method,status,total,shipping_cost,created_at,updated_at").eq("id",orderId).single();
+const {data:o,error:oe}=await sb.from("orders").select("id,order_number,customer_name,customer_phone,country_code,shipping_address,currency_code,payment_method,status,total,shipping_cost,created_at,updated_at").eq("id",orderId).single();
 if(oe)throw oe;
 const {data:items,error:ie}=await sb.from("order_items").select("product_id,product_name,product_image,unit_price,quantity,line_total").eq("order_id",orderId);
 if(ie)throw ie;
 
 document.getElementById("title").textContent="تفاصيل الطلب #"+o.order_number;
 document.getElementById("date").textContent="تم إنشاء الطلب: "+new Date(o.created_at).toLocaleString("ar-EG");
+const shippingText=String(o.shipping_address||"");
+const cityMatch=shippingText.match(/(?:^|\\n)المدينة \/ المحافظة:\\s*(.*?)(?:\\n|$)/);
+const addressMatch=shippingText.match(/(?:^|\\n)العنوان:\\s*(.*?)(?:\\n|$)/);
+const notesMatch=shippingText.match(/(?:^|\\n)ملاحظات:\\s*(.*?)(?:\\n|$)/);
+const city=cityMatch?cityMatch[1].trim():"";
+const address=addressMatch?addressMatch[1].trim():shippingText;
+const notes=notesMatch?notesMatch[1].trim():"لا توجد";
 document.getElementById("customer").innerHTML=[
-["الاسم",o.customer_name],["الهاتف",o.phone],["الدولة",countries[o.country_code]||o.country_code],["العنوان",o.address],["طريقة الدفع",o.payment_method==="cod"?"الدفع عند الاستلام":o.payment_method],["ملاحظات",o.notes||"لا توجد"]
+["الاسم",o.customer_name],["الهاتف",o.customer_phone],["الدولة",countries[o.country_code]||o.country_code],["المدينة / المحافظة",city||"—"],["العنوان",address||"—"],["طريقة الدفع",o.payment_method==="cod"?"الدفع عند الاستلام":o.payment_method],["ملاحظات",notes]
 ].map(x=>'<div class="info"><div class="label">'+esc(x[0])+'</div><div class="value">'+esc(x[1])+'</div></div>').join("");
 
-document.getElementById("items").innerHTML=(items||[]).map(i=>'<tr><td><div class="product">'+(i.product_image?'<img src="'+esc(i.product_image)+'" alt="">':"")+'<span>'+esc(i.product_name)+'</span></div></td><td>'+money(i.unit_price)+'</td><td>'+esc(i.quantity)+'</td><td>'+money(i.line_total)+'</td></tr>').join("")||'<tr><td colspan="4">لا توجد منتجات.</td></tr>';
+document.getElementById("items").innerHTML=(items||[]).map(i=>'<tr><td><div class="product">'+(i.product_image?'<img src="'+esc(i.product_image)+'" alt="">':"")+'<span>'+esc(i.product_name)+'</span></div></td><td>'+money(i.unit_price,o.currency_code)+'</td><td>'+esc(i.quantity)+'</td><td>'+money(i.line_total,o.currency_code)+'</td></tr>').join("")||'<tr><td colspan="4">لا توجد منتجات.</td></tr>';
 
 const shipping=Number(o.shipping_cost||0), total=Number(o.total||0), subtotal=total-shipping;
-document.getElementById("subtotal").textContent=money(subtotal);
-document.getElementById("shipping").textContent=shipping===0?"مجاني":money(shipping);
-document.getElementById("total").textContent=money(total);
+document.getElementById("subtotal").textContent=money(subtotal,o.currency_code);
+document.getElementById("shipping").textContent=shipping===0?"مجاني":money(shipping,o.currency_code);
+document.getElementById("total").textContent=money(total,o.currency_code);
 document.getElementById("status").value=o.status;
 
-const wa="https://wa.me/"+String(o.phone||"").replace(/D/g,"")+"?text="+encodeURIComponent("مرحبًا "+o.customer_name+"، معك OZZI بخصوص طلبك رقم #"+o.order_number+".");
+const wa="https://wa.me/"+String(o.customer_phone||"").replace(/\D/g,"")+"?text="+encodeURIComponent("مرحبًا "+o.customer_name+"، معك OZZI بخصوص طلبك رقم #"+o.order_number+".");
 document.getElementById("whatsapp").href=wa;
 
 document.getElementById("save").onclick=async()=>{
