@@ -51,7 +51,7 @@ body{background:#f5f7f8}.checkout-page{padding:30px 0 70px}
 <div class="field"><label>رقم هاتف إضافي</label><input id="alternatePhone" type="tel"></div>
 <div class="row">
 <div class="field"><label>الدولة</label><input id="country" readonly></div>
-<div class="field"><label>المدينة / المحافظة</label><input id="city" required></div>
+<div class="field"><label>المدينة / المحافظة</label><select id="city" required><option value="">اختر المدينة / المحافظة</option></select></div>
 </div>
 <div class="field"><label>العنوان بالتفصيل</label><textarea id="address" required></textarea></div>
 <div class="field"><label>ملاحظات</label><textarea id="notes" placeholder="أي ملاحظات خاصة بالتوصيل (اختياري)"></textarea></div>
@@ -86,6 +86,8 @@ const symbols={EG:"ج.م",SA:"ر.س",AE:"د.إ",IQ:"ع.ع",OM:"ر.ع"};
 let sb,user,cart=[],countryCode="EG",appliedCoupon=null;
 
 function money(v){return new Intl.NumberFormat("ar-EG").format(Number(v)||0)+" "+(symbols[countryCode]||"ج.م")}
+const cities={EG:["القاهرة","الجيزة","الإسكندرية","القليوبية","الدقهلية","الشرقية","الغربية","المنوفية","البحيرة","كفر الشيخ","دمياط","بورسعيد","الإسماعيلية","السويس","شمال سيناء","جنوب سيناء","الفيوم","بني سويف","المنيا","أسيوط","سوهاج","قنا","الأقصر","أسوان","البحر الأحمر","مطروح","الوادي الجديد"],SA:["الرياض","جدة","مكة المكرمة","المدينة المنورة","الدمام","الخبر","الظهران","الطائف","تبوك","أبها","خميس مشيط","حائل","جازان","نجران","القصيم","الجبيل","ينبع"],AE:["أبوظبي","دبي","الشارقة","عجمان","أم القيوين","رأس الخيمة","الفجيرة","العين"],IQ:["بغداد","البصرة","نينوى","أربيل","النجف","كربلاء","الأنبار","ديالى","ذي قار","بابل","كركوك","السليمانية"],OM:["مسقط","صلالة","صحار","نزوى","صور","الرستاق","البريمي","عبري","خصب"]};
+function populateCities(){const select=document.getElementById("city");if(!select)return;const list=cities[countryCode]||[];select.innerHTML='<option value="">اختر المدينة / المحافظة</option>'+list.map(city=>'<option value="'+esc(city)+'">'+esc(city)+'</option>').join("");}
 function setMessage(t,type){const el=document.getElementById("message");el.textContent=t;el.className="message show "+type}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 
@@ -101,7 +103,7 @@ async function init(){
   cart=window.ozziCart.getCart();
   if(!cart.length){document.getElementById("empty").style.display="block";return}
   document.getElementById("app").style.display="grid";
-  document.getElementById("country").value=countryNames[countryCode];
+  document.getElementById("country").value=countryNames[countryCode];\n  populateCities();
 
   document.getElementById("name").value=user.user_metadata?.full_name||"";
   document.getElementById("phone").value=user.user_metadata?.phone||"";
@@ -175,19 +177,23 @@ async function createOrder(e){
   // الأعمدة المتاحة حاليًا في جدول orders هي فقط هذه الحقول الأساسية.
   // بيانات التوصيل التفصيلية تظل في رسالة واتساب وبيانات الطلب المحلية،
   // حتى لا يفشل إنشاء الطلب بسبب أعمدة غير موجودة في قاعدة البيانات الحالية.
-  const shippingAddress=[city,address].filter(Boolean).join(" - ");
   const discount=appliedCoupon?.discount||0;
   const finalTotal=Math.max(0,subtotal-discount);
+  const storedNotes=["__OZZI_CITY__:"+city,notes].filter(Boolean).join("\n");
   const orderPayload={
    user_id:user.id,
    customer_name:name,
    customer_phone:phone,
-   shipping_address:shippingAddress,
+   alternate_phone:alternatePhone||null,
    country_code:countryCode,
-   currency_code:({EG:"EGP",SA:"SAR",AE:"AED",IQ:"IQD",OM:"OMR"})[countryCode]||"EGP",
+   address:address,
+   notes:storedNotes||null,
    payment_method:"cod",
    status:"pending",
-   total:finalTotal
+   total:finalTotal,
+   client_order_id:clientOrderId,
+   coupon_code:appliedCoupon?.code||null,
+   discount_amount:discount
   };
 
   const orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
