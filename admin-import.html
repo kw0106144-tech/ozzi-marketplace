@@ -35,9 +35,7 @@
       <h2 style="margin-top:0">1) جلب المنتجات</h2>
       <div class="field"><label>رابط صفحة المنتجات في Dukan</label><input id="sourceUrl" class="input" value="https://taager.com/dukan/products" placeholder="https://taager.com/dukan/products"></div>
       <div class="actions"><button id="fetchBtn" class="btn primary">محاولة الجلب تلقائيًا</button><button id="clearBtn" class="btn outline">مسح</button></div>
-      <p class="hint">لو المتصفح منع الجلب بسبب تسجيل الدخول أو CORS، استخدم مربع HTML بالأسفل: افتح صفحة المنتجات في Dukan، اعمل View Page Source أو انسخ HTML الصفحة، ثم الصقه هنا.</p>
-      <div class="field"><label>HTML صفحة Dukan — بديل آمن عند فشل الجلب</label><textarea id="htmlInput" placeholder="الصق HTML الصفحة هنا..."></textarea></div>
-      <div class="actions"><button id="parseBtn" class="btn outline">تحليل HTML</button></div>
+      <p class="hint">الأفضل الآن: استخدم زر <b>تحميل الصفحة من جهازك</b>. افتح صفحة المنتجات في Dukan وأنت مسجل دخول، ثم اضغط الزر وسيطلب منك اختيار ملف HTML محفوظ من المتصفح.</p><div class="actions"><button id="fileBtn" class="btn outline">📄 تحميل HTML محفوظ</button><input id="fileInput" type="file" accept=".html,.htm,text/html" class="hidden"></div><div class="field"><label>أو الصق HTML هنا</label><textarea id="htmlInput" placeholder="الصق محتوى HTML الكامل هنا..."></textarea></div><div class="actions"><button id="parseBtn" class="btn outline">تحليل HTML</button></div>
     </div>
     <div class="panel">
       <h2 style="margin-top:0">2) حالة الاستيراد</h2>
@@ -129,7 +127,7 @@ async function fetchUrl(){
    show("الجلب المباشر لم ينجح: "+e.message+" — استخدم HTML البديل الموجود أسفل الرابط.");
  }
 }
-function parseInput(){const html=$("htmlInput").value.trim();if(!html){show("الصق HTML صفحة Dukan أولًا.");return}products=parseDukanHtml(html);render();$("statusText").textContent=products.length?"تم التحليل":"لم يتم العثور";if(products.length)show("تم استخراج "+products.length+" منتج. راجع البيانات قبل الاستيراد.",true);else show("لم أجد منتجات في HTML المُلصق. استخدم مصدر الصفحة الكامل.")}
+function parseInput(htmlOverride){const html=(htmlOverride??$("htmlInput").value).trim();if(!html){show("لم يتم العثور على HTML. احفظ صفحة المنتجات من Dukan كملف HTML ثم اخترها هنا.");return}products=parseDukanHtml(html);render();$("statusText").textContent=products.length?"تم التحليل":"لم يتم العثور";if(products.length)show("تم استخراج "+products.length+" منتج. راجع البيانات قبل الاستيراد.",true);else show("الملف لا يحتوي على جدول المنتجات في HTML الذي تم حفظه. سنحتاج استخراج البيانات من صفحة المتجر نفسها.");}
 async function importSelected(){
  const selected=products.filter(p=>p.selected);if(!selected.length){show("حدد منتجًا واحدًا على الأقل.");return}
  $("importBtn").disabled=true;$("statusText").textContent="جاري الاستيراد...";
@@ -157,7 +155,7 @@ async function init(){
   currentUser=data.session.user;
   const role=await sb.from("admin_roles").select("role").eq("user_id",currentUser.id).maybeSingle();
   if(role.error||!role.data||!["admin","manager"].includes(role.data.role)){show("ليس لديك صلاحية الدخول إلى المستورد.");setTimeout(()=>location.href="index.html",1800);return}
-  $("fetchBtn").onclick=fetchUrl;$("parseBtn").onclick=parseInput;$("importBtn").onclick=importSelected;
+  $("fetchBtn").onclick=fetchUrl;$("parseBtn").onclick=()=>parseInput();$("fileBtn").onclick=()=>$("fileInput").click();$("fileInput").addEventListener("change",e=>{const f=e.target.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=()=>parseInput(String(reader.result||""));reader.readAsText(f)});$("importBtn").onclick=importSelected;
   $("selectAll").onclick=()=>{products.forEach(p=>p.selected=true);render()};
   $("master").onchange=e=>{products.forEach(p=>p.selected=e.target.checked);render()};
   $("clearBtn").onclick=()=>{products=[];$("htmlInput").value="";render();$("progressBar").style.width="0";$("statusText").textContent="جاهز"};
