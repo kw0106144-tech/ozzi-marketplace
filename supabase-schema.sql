@@ -19,6 +19,27 @@ create table if not exists public.orders (
 );
 
 alter table public.orders add column if not exists order_number bigint generated always as identity;
+alter table public.orders add column if not exists alternate_phone text;
+alter table public.orders add column if not exists city text;
+alter table public.orders add column if not exists coupon_code text;
+alter table public.orders add column if not exists discount_amount numeric(12,2) not null default 0 check (discount_amount >= 0);
+
+create table if not exists public.coupons (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,
+  discount_type text not null check (discount_type in ('percent','fixed')),
+  discount_value numeric(12,2) not null check (discount_value > 0),
+  min_order numeric(12,2) not null default 0 check (min_order >= 0),
+  country_code text check (country_code is null or country_code in ('EG','SA','AE','IQ','OM')),
+  active boolean not null default true,
+  starts_at timestamptz,
+  ends_at timestamptz,
+  created_at timestamptz not null default now()
+);
+alter table public.coupons enable row level security;
+drop policy if exists "Anyone can view active coupons" on public.coupons;
+create policy "Anyone can view active coupons" on public.coupons for select to anon, authenticated using (active=true);
+create index if not exists coupons_code_idx on public.coupons(code);
 alter table public.orders add column if not exists country_code text default 'EG';
 update public.orders set country_code='EG' where country_code is null;
 alter table public.orders alter column country_code set default 'EG', alter column country_code set not null;
