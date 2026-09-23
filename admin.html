@@ -56,20 +56,20 @@ function showCustomerDetails(id){
   document.getElementById("closeCustomerDetails").onclick=()=>document.getElementById("customerDetails").innerHTML="";
 }
 async function loadCustomers(){
-  const {data:orders,error}=await sb.from("orders").select("id,user_id,customer_name,customer_phone,phone,shipping_address,address,city,country_code,total,created_at,status").order("created_at",{ascending:false});
+  const {data:orders,error}=await sb.from("orders").select("id,user_id,customer_name,customer_phone,shipping_address,city,country_code,total,created_at,status").order("created_at",{ascending:false});
   if(error)throw error;
   const map=new Map();
   (orders||[]).forEach(o=>{
     if(!o.user_id)return;
     let c=map.get(o.user_id);
     if(!c){
-      c={id:o.user_id,name:o.customer_name||"عميل",phone:o.customer_phone||o.phone||"",address:o.shipping_address||o.address||"",city:o.city||"",country:countries[o.country_code]||o.country_code||"—",email:"",orders:0,total:0,lastOrder:o.created_at};
+      c={id:o.user_id,name:o.customer_name||"عميل",phone:o.customer_phone||"",address:o.shipping_address||o.address||"",city:o.city||"",country:countries[o.country_code]||o.country_code||"—",email:"",orders:0,total:0,lastOrder:o.created_at};
       map.set(o.user_id,c);
     }
     c.orders++;
     if(o.customer_name)c.name=o.customer_name;
-    if(o.customer_phone)c.phone=o.customer_phone; else if(o.phone)c.phone=o.phone;
-    if(o.shipping_address)c.address=o.shipping_address; else if(o.address)c.address=o.address;
+    if(o.customer_phone)c.phone=o.customer_phone;
+    if(o.shipping_address)c.address=o.shipping_address;
     if(o.city)c.city=o.city;
     if(o.status!=="cancelled")c.total+=Number(o.total||0);
     if(new Date(o.created_at)>new Date(c.lastOrder))c.lastOrder=o.created_at;
