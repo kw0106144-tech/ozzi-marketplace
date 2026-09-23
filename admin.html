@@ -56,14 +56,14 @@ function showCustomerDetails(id){
   document.getElementById("closeCustomerDetails").onclick=()=>document.getElementById("customerDetails").innerHTML="";
 }
 async function loadCustomers(){
-  const {data:orders,error}=await sb.from("orders").select("id,user_id,customer_name,customer_phone,shipping_address,city,country_code,total,created_at,status").order("created_at",{ascending:false});
+  const {data:orders,error}=await sb.from("orders").select("id,user_id,customer_name,country_code,total,created_at,status").order("created_at",{ascending:false});
   if(error)throw error;
   const map=new Map();
   (orders||[]).forEach(o=>{
     if(!o.user_id)return;
     let c=map.get(o.user_id);
     if(!c){
-      c={id:o.user_id,name:o.customer_name||"عميل",phone:o.customer_phone||"",address:o.shipping_address||"",city:o.city||"",country:countries[o.country_code]||o.country_code||"—",email:"",orders:0,total:0,lastOrder:o.created_at};
+      c={id:o.user_id,name:o.customer_name||"عميل",phone:"",address:"",city:"",country:countries[o.country_code]||o.country_code||"—",email:"",orders:0,total:0,lastOrder:o.created_at};
       map.set(o.user_id,c);
     }
     c.orders++;
