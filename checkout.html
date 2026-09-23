@@ -28,12 +28,12 @@ body{background:#f5f7f8}.checkout-page{padding:30px 0 70px}
 <header class="site-header">
 <div class="container nav">
 <a class="brand" href="index.html" aria-label="OZZI"><span class="brand-text">OZZI</span><span class="brand-text">MORE THAN STORE</span></a>
-<div class="nav-actions">
+<button class="mobile-menu-toggle" type="button" aria-label="فتح قائمة الموقع" aria-expanded="false" aria-controls="ozziMobileMenu"><span></span><span></span><span></span></button><div class="mobile-menu-panel" id="ozziMobileMenu"><div class="nav-actions">
 <a class="btn btn-outline cart-link cart-icon-btn" href="cart.html" title="السلة">🛒 <span id="cartCount" class="cart-count">0</span></a>
 <a class="btn btn-outline" href="orders.html">📦 طلباتي</a>
 <a class="btn btn-outline" href="favorites.html">❤️ المفضلة</a>
 <a class="btn btn-primary" href="profile.html">👤 الملف الشخصي</a>
-</div>
+</div></div>
 </div>
 </header>
 
@@ -226,5 +226,5 @@ async function createOrder(e){
 document.addEventListener("DOMContentLoaded",init);
 })();
 </script>
-</body>
+<script src="js/mobile-header.js"></script></body>
 </html>
