@@ -135,8 +135,11 @@ async function loadOrders(){
 
   const orderIds=list.map(o=>o.id);
   const {data:itemData,error:itemError}=await sb.from("order_items").select("order_id,product_name,quantity,unit_price").in("order_id",orderIds);
-  if(itemError)throw itemError;
   const itemMap=new Map();
+  if(itemError){
+    console.error("OZZI ORDER ITEMS ERROR:",itemError);
+    showMessage("تم تحميل الطلبات، لكن تعذر تحميل تفاصيل المنتجات: "+itemError.message);
+  }
   (itemData||[]).forEach(i=>{
     const arr=itemMap.get(i.order_id)||[];
     arr.push(i);
@@ -215,7 +218,15 @@ if(error)throw error;
 document.getElementById("shippingGrid").innerHTML=(rows||[]).map(r=>'<div class="shipping-card"><h3>'+esc(countries[r.country_code]||r.country_code)+'</h3><label>سعر الشحن</label><input class="shipping-input" type="number" min="0" step="0.01" value="'+esc(r.shipping_cost)+'" data-country="'+esc(r.country_code)+'"><label class="switch-row"><input type="checkbox" '+(r.free_shipping?"checked":"")+' data-free="'+esc(r.country_code)+'"> شحن مجاني</label><button class="btn btn-primary save-btn" data-save="'+esc(r.country_code)+'">حفظ</button></div>').join("");
 document.querySelectorAll("[data-save]").forEach(btn=>btn.addEventListener("click",async()=>{const code=btn.dataset.save,input=document.querySelector('.shipping-input[data-country="'+code+'"]'),free=document.querySelector('[data-free="'+code+'"]'),cost=Math.max(0,Number(input.value||0));btn.disabled=true;const {error}=await sb.from("shipping_settings").update({shipping_cost:cost,free_shipping:free.checked,updated_at:new Date().toISOString()}).eq("country_code",code);btn.disabled=false;if(error){showMessage("تعذر حفظ إعداد الشحن: "+error.message);return}showMessage("تم حفظ إعدادات الشحن لـ "+(countries[code]||code)+" بنجاح.",true);await loadShipping()}))
 }
-document.getElementById("customerSearch")?.addEventListener("input",renderCustomers);document.getElementById("couponForm").addEventListener("submit",saveCoupon);document.getElementById("cancelCouponBtn").addEventListener("click",resetCouponForm);document.getElementById("sellerForm").addEventListener("submit",saveSeller);document.getElementById("productHasDiscount").addEventListener("change",toggleDiscountFields);document.getElementById("productSpecialOffer").addEventListener("change",toggleSpecialOfferTiming);toggleDiscountFields();toggleSpecialOfferTiming();document.getElementById("productImageFile").addEventListener("change",()=>{const files=Array.from(document.getElementById("productImageFile").files||[]),s=document.getElementById("imageUploadStatus"),p=document.getElementById("imagePreview");if(!files.length){s.textContent="اختر صورًا من جهازك";p.style.display="none";return}if(files.length>10||files.some(f=>!f.type.startsWith("image/"))){s.textContent="اختر حتى 10 صور بصيغة صورة صحيحة.";p.style.display="none";return}s.textContent="تم اختيار "+files.length+" صورة"+(files.some(f=>f.size>5*1024*1024)?" — الصور الكبيرة سيتم ضغطها تلقائيًا":"");p.src=URL.createObjectURL(files[0]);p.style.display="block"});document.getElementById("addProductBtn").addEventListener("click",resetProductForm);document.getElementById("cancelProductBtn").addEventListener("click",()=>document.getElementById("productFormWrap").hidden=true);document.getElementById("productForm").addEventListener("submit",saveProduct);document.getElementById("productSearch").addEventListener("input",loadProducts);await loadOrders(); await loadDashboardInsights();await loadCustomers();await loadCoupons();await loadShipping();await loadSellers();await loadProducts()
+document.getElementById("customerSearch")?.addEventListener("input",renderCustomers);document.getElementById("couponForm").addEventListener("submit",saveCoupon);document.getElementById("cancelCouponBtn").addEventListener("click",resetCouponForm);document.getElementById("sellerForm").addEventListener("submit",saveSeller);document.getElementById("productHasDiscount").addEventListener("change",toggleDiscountFields);document.getElementById("productSpecialOffer").addEventListener("change",toggleSpecialOfferTiming);toggleDiscountFields();toggleSpecialOfferTiming();document.getElementById("productImageFile").addEventListener("change",()=>{const files=Array.from(document.getElementById("productImageFile").files||[]),s=document.getElementById("imageUploadStatus"),p=document.getElementById("imagePreview");if(!files.length){s.textContent="اختر صورًا من جهازك";p.style.display="none";return}if(files.length>10||files.some(f=>!f.type.startsWith("image/"))){s.textContent="اختر حتى 10 صور بصيغة صورة صحيحة.";p.style.display="none";return}s.textContent="تم اختيار "+files.length+" صورة"+(files.some(f=>f.size>5*1024*1024)?" — الصور الكبيرة سيتم ضغطها تلقائيًا":"");p.src=URL.createObjectURL(files[0]);p.style.display="block"});document.getElementById("addProductBtn").addEventListener("click",resetProductForm);document.getElementById("cancelProductBtn").addEventListener("click",()=>document.getElementById("productFormWrap").hidden=true);document.getElementById("productForm").addEventListener("submit",saveProduct);document.getElementById("productSearch").addEventListener("input",loadProducts);
+async function safeLoad(name,fn){try{await fn()}catch(err){console.error("OZZI ADMIN SECTION ERROR:",name,err);showMessage("تعذر تحميل "+name+": "+(err.message||"خطأ غير معروف"))}}
+await safeLoad("الطلبات",loadOrders);
+await safeLoad("إحصائيات المبيعات",loadDashboardInsights);
+await safeLoad("العملاء",loadCustomers);
+await safeLoad("الكوبونات",loadCoupons);
+await safeLoad("الشحن",loadShipping);
+await safeLoad("التجار",loadSellers);
+await safeLoad("المنتجات",loadProducts)
 }catch(err){console.error("OZZI ADMIN ERROR:",err);showMessage("حدث خطأ أثناء تحميل لوحة التحكم: "+(err.message||"خطأ غير معروف"))}
 })();
 </script>
