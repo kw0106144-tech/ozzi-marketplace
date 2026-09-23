@@ -348,3 +348,11 @@ begin
 end; $$;
 drop trigger if exists trg_ozzi_product_notification on public.products;
 create trigger trg_ozzi_product_notification after update on public.products for each row execute function public.ozzi_notify_product_changes();
+
+-- Legacy compatibility: OZZI now uses country_code instead of country_id.
+-- Existing databases may still have country_id as NOT NULL on orders.
+alter table public.orders add column if not exists country_code text default 'EG';
+update public.orders set country_code='EG' where country_code is null;
+alter table public.orders alter column country_code set default 'EG';
+alter table public.orders alter column country_code set not null;
+alter table public.orders alter column country_id drop not null;
