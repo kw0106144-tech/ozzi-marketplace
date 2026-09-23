@@ -192,6 +192,14 @@ body{background:#f5f7f8}
    const sessionResult=await sb.auth.getSession();
    if(!sessionResult.data.session){window.location.replace("login.html?next=checkout.html");return}
    user=sessionResult.data.session.user;
+   // تأكد أن الـ session الحالية ما زالت مرتبطة بمستخدم موجود فعليًا في Auth.
+   const verified=await sb.auth.getUser();
+   if(verified.error||!verified.data?.user) {
+    await sb.auth.signOut();
+    window.location.replace("login.html?next=checkout.html");
+    return;
+   }
+   user=verified.data.user;
    const meta=user.user_metadata||{};
    countryCode=String(meta.country_code||localStorage.getItem("ozzi_country")||"EG").toUpperCase();
    countryName=countries[countryCode];
@@ -221,7 +229,13 @@ body{background:#f5f7f8}
    const currencyCode=currencyByCountry[countryCode]||"EGP";
    const orderPayload={user_id:user.id,customer_name:name,customer_phone:phone,country_code:countryCode,currency_code:currencyCode,shipping_address:address,payment_method:"cod",status:"pending",total:finalTotal};
    const orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
-   if(orderResult.error)throw orderResult.error;
+   if(orderResult.error){
+    const msg=String(orderResult.error.message||"");
+    if(orderResult.error.code==="23503"&&msg.includes("orders_user_id_fkey")){
+      throw new Error("جلسة الحساب الحالية غير صالحة. تم تسجيل الخروج تلقائيًا، سجل الدخول مرة أخرى ثم أعد الطلب.");
+    }
+    throw orderResult.error;
+   }
    const order=orderResult.data;
    const orderItems=cart.map(item=>({order_id:order.id,product_id:String(item.id),product_name:item.name||"منتج",unit_price:Number(item.price),quantity:Number(item.quantity)}));
    const itemsResult=await sb.from("order_items").insert(orderItems);if(itemsResult.error)throw itemsResult.error;
