@@ -52,25 +52,36 @@ function renderCustomers(){
 }
 function showCustomerDetails(id){
   const c=dashboardCustomers.find(x=>x.id===id);if(!c)return;
-  document.getElementById("customerDetails").innerHTML='<div class="customer-details"><div class="seller-manager-head"><div><strong>👤 '+esc(c.name)+'</strong><div class="muted">'+esc(c.email||"بدون بريد")+' • '+esc(c.phone||"بدون هاتف")+'</div></div><button type="button" class="mini-btn" id="closeCustomerDetails">إغلاق</button></div><div class="customer-details-grid"><div class="customer-detail-box"><small>الدولة</small><strong>'+esc(c.country)+'</strong></div><div class="customer-detail-box"><small>عدد الطلبات</small><strong>'+c.orders+'</strong></div><div class="customer-detail-box"><small>إجمالي المشتريات</small><strong>'+money(c.total)+'</strong></div><div class="customer-detail-box"><small>آخر طلب</small><strong>'+new Date(c.lastOrder).toLocaleDateString("ar-EG")+'</strong></div></div></div>';
+  document.getElementById("customerDetails").innerHTML='<div class="customer-details"><div class="seller-manager-head"><div><strong>👤 '+esc(c.name)+'</strong><div class="muted">'+esc(c.email||"بدون بريد")+' • '+esc(c.phone||"بدون هاتف")+'</div></div><button type="button" class="mini-btn" id="closeCustomerDetails">إغلاق</button></div><div class="customer-details-grid"><div class="customer-detail-box"><small>الهاتف</small><strong>'+esc(c.phone||"غير مسجل")+'</strong></div><div class="customer-detail-box"><small>الدولة</small><strong>'+esc(c.country)+'</strong></div><div class="customer-detail-box"><small>المدينة</small><strong>'+esc(c.city||"غير مسجلة")+'</strong></div><div class="customer-detail-box"><small>العنوان</small><strong>'+esc(c.address||"غير مسجل")+'</strong></div><div class="customer-detail-box"><small>عدد الطلبات</small><strong>'+c.orders+'</strong></div><div class="customer-detail-box"><small>إجمالي المشتريات</small><strong>'+money(c.total)+'</strong></div><div class="customer-detail-box"><small>آخر طلب</small><strong>'+new Date(c.lastOrder).toLocaleDateString("ar-EG")+'</strong></div></div></div>';
   document.getElementById("closeCustomerDetails").onclick=()=>document.getElementById("customerDetails").innerHTML="";
 }
 async function loadCustomers(){
-  const {data:orders,error}=await sb.from("orders").select("id,user_id,customer_name,country_code,total,created_at,status").order("created_at",{ascending:false});
+  const {data:orders,error}=await sb.from("orders").select("id,user_id,customer_name,customer_phone,shipping_address,city,country_code,total,created_at,status").order("created_at",{ascending:false});
   if(error)throw error;
   const map=new Map();
   (orders||[]).forEach(o=>{
     if(!o.user_id)return;
     let c=map.get(o.user_id);
-    if(!c){c={id:o.user_id,name:o.customer_name||"عميل",phone:"",country:countries[o.country_code]||o.country_code||"—",email:"",orders:0,total:0,lastOrder:o.created_at};map.set(o.user_id,c)}
+    if(!c){
+      c={id:o.user_id,name:o.customer_name||"عميل",phone:o.customer_phone||"",address:o.shipping_address||"",city:o.city||"",country:countries[o.country_code]||o.country_code||"—",email:"",orders:0,total:0,lastOrder:o.created_at};
+      map.set(o.user_id,c);
+    }
     c.orders++;
+    if(o.customer_name)c.name=o.customer_name;
+    if(o.customer_phone)c.phone=o.customer_phone;
+    if(o.shipping_address)c.address=o.shipping_address;
+    if(o.city)c.city=o.city;
     if(o.status!=="cancelled")c.total+=Number(o.total||0);
     if(new Date(o.created_at)>new Date(c.lastOrder))c.lastOrder=o.created_at;
   });
   const ids=[...map.keys()];
   if(ids.length){
-    const {data:users}=await sb.from("profiles").select("id,email,full_name,phone").in("id",ids);
-    (users||[]).forEach(u=>{const c=map.get(u.id);if(c){c.email=u.email||"";if(u.full_name)c.name=u.full_name;if(u.phone)c.phone=u.phone}});
+    try{
+      const {data:users,error:profilesError}=await sb.from("profiles").select("id,email,full_name,phone").in("id",ids);
+      if(!profilesError){
+        (users||[]).forEach(u=>{const c=map.get(u.id);if(c){c.email=u.email||"";if(u.full_name)c.name=u.full_name;if(u.phone&&!c.phone)c.phone=u.phone}});
+      }
+    }catch(e){console.warn("Profiles unavailable; using order customer data.",e)}
   }
   dashboardCustomers=[...map.values()];
   renderCustomers();
