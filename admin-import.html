@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OZZI Importer</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+:root{--dark:#111827;--muted:#667085;--line:#e6ebef;--bg:#f4f6f8;--card:#fff;--green:#16a34a;--red:#dc2626}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#111827;font-family:inherit}
+.shell{min-height:100vh;display:flex}.side{width:255px;background:var(--dark);color:#fff;position:sticky;top:0;height:100vh;padding:22px 16px;display:flex;flex-direction:column;gap:18px}.brand{display:flex;align-items:center;gap:10px;padding:8px 10px 20px;border-bottom:1px solid #ffffff1a}.mark{width:42px;height:42px;border-radius:12px;background:#fff;color:var(--dark);display:grid;place-items:center;font-weight:1000}.brand strong{font-size:22px}.brand small{display:block;color:#aeb7c3;font-size:11px}.nav{display:grid;gap:6px}.nav a{color:#cbd5e1;text-decoration:none;padding:12px;border-radius:11px;font-weight:800}.nav a:hover,.nav a.active{background:#ffffff12;color:#fff}.side-foot{margin-top:auto;border-top:1px solid #ffffff1a;padding-top:15px;display:grid;gap:8px}.content{flex:1;min-width:0}.top{height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 30px}.page{padding:28px 30px 60px;max-width:1250px;margin:auto}.hero{background:linear-gradient(135deg,#111827,#263244);color:#fff;border-radius:22px;padding:26px 28px;margin-bottom:20px}.hero h1{margin:0 0 8px;font-size:28px}.hero p{margin:0;color:#cbd5e1}.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 12px 35px #0f172a0b}.grid{display:grid;grid-template-columns:1.3fr .7fr;gap:16px}.field{display:grid;gap:7px;margin-bottom:13px}.field label{font-weight:900;font-size:13px}.input,textarea{width:100%;padding:11px 12px;border:1px solid #dbe2e8;border-radius:10px;background:#fff;font:inherit;outline:none}.input:focus,textarea:focus{border-color:#9aa7b5;box-shadow:0 0 0 3px #1118270b}textarea{min-height:180px;resize:vertical}.actions{display:flex;gap:9px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:11px 15px;font:inherit;font-weight:900;cursor:pointer}.primary{background:var(--dark);color:#fff}.green{background:var(--green);color:#fff}.outline{background:#fff;border:1px solid #d7e0e5}.danger{color:var(--red)}.message{display:none;padding:13px 15px;border-radius:12px;margin-bottom:15px;font-weight:800}.message.show{display:block;background:#fff1f1;color:#b42318;border:1px solid #fecaca}.message.ok{background:#effcf6;color:#067647;border-color:#bbf7d0}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{border:1px solid var(--line);border-radius:13px;padding:13px;background:#fafcfd}.stat small{display:block;color:var(--muted);margin-bottom:5px}.stat strong{font-size:22px}.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:11px 9px;border-bottom:1px solid #eef1f4;text-align:right;vertical-align:middle}.table th{font-size:12px;color:#667085;background:#f8fafb}.thumb{width:58px;height:58px;border-radius:9px;object-fit:cover;background:#eef2f5}.old{text-decoration:line-through;color:#8a94a3}.discount{color:#b42318;font-weight:900}.check{width:18px;height:18px}.tag{display:inline-block;padding:5px 8px;border-radius:999px;background:#eef2f5;font-size:11px;font-weight:800}.progress{height:9px;background:#edf1f3;border-radius:999px;overflow:hidden;margin-top:10px}.progress i{display:block;height:100%;width:0;background:#111827;transition:.2s}.hint{color:var(--muted);font-size:12px;line-height:1.7}.hidden{display:none!important}
+@media(max-width:900px){.side{display:none}.top{padding:0 15px}.page{padding:16px 12px 40px}.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.hero{border-radius:17px}.hero h1{font-size:23px}}
+@media(max-width:520px){.stats{grid-template-columns:1fr 1fr}.panel{padding:14px}.actions .btn{width:100%}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="side">
+  <div class="brand"><div class="mark">OZ</div><div><strong>OZZI</strong><small>Admin Dashboard</small></div></div>
+  <nav class="nav">
+    <a href="admin.html">⌂ الرئيسية</a>
+    <a href="admin.html#products">🛍 المنتجات</a>
+    <a class="active" href="admin-import.html">⬇️ استيراد المنتجات</a>
+    <a href="index.html">🛒 المتجر</a>
+  </nav>
+  <div class="side-foot"><a class="btn outline" href="admin.html">العودة للوحة التحكم</a><button class="btn outline" id="logoutBtn" type="button">تسجيل الخروج</button></div>
+</aside>
+<div class="content">
+<header class="top"><div><strong>استيراد منتجات OZZI</strong><div class="hint">Dukan → OZZI</div></div><button class="btn outline" id="mobileBack">لوحة التحكم</button></header>
+<main class="page">
+  <section class="hero"><h1>Importer — نقل منتجات Dukan إلى OZZI</h1><p>استخرج المنتجات من صفحة Dukan القديمة، راجع البيانات، ثم استوردها إلى قاعدة منتجات OZZI بدون حذف المنتجات الموجودة.</p></section>
+  <div id="message" class="message"></div>
+  <section class="grid">
+    <div class="panel">
+      <h2 style="margin-top:0">1) جلب المنتجات</h2>
+      <div class="field"><label>رابط صفحة المنتجات في Dukan</label><input id="sourceUrl" class="input" value="https://taager.com/dukan/products" placeholder="https://taager.com/dukan/products"></div>
+      <div class="actions"><button id="fetchBtn" class="btn primary">محاولة الجلب تلقائيًا</button><button id="clearBtn" class="btn outline">مسح</button></div>
+      <p class="hint">لو المتصفح منع الجلب بسبب تسجيل الدخول أو CORS، استخدم مربع HTML بالأسفل: افتح صفحة المنتجات في Dukan، اعمل View Page Source أو انسخ HTML الصفحة، ثم الصقه هنا.</p>
+      <div class="field"><label>HTML صفحة Dukan — بديل آمن عند فشل الجلب</label><textarea id="htmlInput" placeholder="الصق HTML الصفحة هنا..."></textarea></div>
+      <div class="actions"><button id="parseBtn" class="btn outline">تحليل HTML</button></div>
+    </div>
+    <div class="panel">
+      <h2 style="margin-top:0">2) حالة الاستيراد</h2>
+      <div class="stats">
+        <div class="stat"><small>تم العثور</small><strong id="found">0</strong></div>
+        <div class="stat"><small>محدد</small><strong id="selected">0</strong></div>
+        <div class="stat"><small>مستورد</small><strong id="imported">0</strong></div>
+        <div class="stat"><small>متخطى</small><strong id="skipped">0</strong></div>
+      </div>
+      <div style="margin-top:18px"><strong id="statusText">جاهز</strong><div class="progress"><i id="progressBar"></i></div></div>
+      <p class="hint">الاستيراد يضيف المنتجات فقط. لا يحذف منتجات OZZI ولا يستبدلها تلقائيًا.</p>
+    </div>
+  </section>
+  <section class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div><h2 style="margin:0">3) مراجعة المنتجات</h2><div class="hint">السعر الحالي محفوظ في price، والسعر القديم في original_price، ونسبة الخصم يتم حسابها تلقائيًا.</div></div>
+      <div class="actions"><button id="selectAll" class="btn outline">تحديد الكل</button><button id="importBtn" class="btn green">استيراد المحدد إلى OZZI</button></div>
+    </div>
+    <div class="table-wrap" style="margin-top:15px"><table class="table"><thead><tr><th><input id="master" class="check" type="checkbox"></th><th>الصورة</th><th>المنتج</th><th>التصنيف</th><th>السعر</th><th>قبل الخصم</th><th>الخصم</th><th>SKU</th></tr></thead><tbody id="rows"><tr><td colspan="8" class="hint">لم يتم جلب منتجات بعد.</td></tr></tbody></table></div>
+  </section>
+</main>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(function(){
+"use strict";
+const SUPABASE_PROJECT="ssrdbmouonbgmmsmbcgw";
+let sb,products=[],currentUser=null;
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+function show(text,ok=false){const m=$("message");m.textContent=text;m.className="message show"+(ok?" ok":"");}
+function money(v){const n=Number(v);return Number.isFinite(n)?n.toFixed(2)+" ج.م":"—"}
+function discount(p){const old=Number(p.original_price),now=Number(p.price);return old>now&&old>0?Math.round((1-now/old)*100):0}
+function setStats(){ $("found").textContent=products.length; $("selected").textContent=products.filter(p=>p.selected).length; }
+function render(){
+ const body=$("rows");
+ if(!products.length){body.innerHTML='<tr><td colspan="8" class="hint">لم يتم العثور على منتجات.</td></tr>';setStats();return}
+ body.innerHTML=products.map((p,i)=>'<tr><td><input class="check row-check" type="checkbox" data-i="'+i+'" '+(p.selected?"checked":"")+'></td><td><img class="thumb" src="'+esc(p.image_url||"https://placehold.co/100x100?text=OZZI")+'" alt=""></td><td><strong>'+esc(p.name)+'</strong><div class="hint">'+esc(p.description||"").slice(0,100)+'</div></td><td><span class="tag">'+esc(p.category||"عام")+'</span></td><td><strong>'+money(p.price)+'</strong></td><td>'+(p.original_price?'<span class="old">'+money(p.original_price)+'</span>':"—")+'</td><td>'+(discount(p)?'<span class="discount">'+discount(p)+'%</span>':"—")+'</td><td>'+esc(p.sku||"—")+'</td></tr>').join("");
+ body.querySelectorAll(".row-check").forEach(c=>c.addEventListener("change",e=>{products[Number(e.target.dataset.i)].selected=e.target.checked;setStats()}));
+ $("master").checked=products.length>0&&products.every(p=>p.selected);setStats();
+}
+function parsePrice(text){if(!text)return null;const cleaned=String(text).replace(/[^0-9.,]/g,"").replace(/,/g,"");const n=parseFloat(cleaned);return Number.isFinite(n)?n:null}
+function normalizeCategory(v){
+ const s=String(v||"").toLowerCase();
+ if(s.includes("electronics")||s.includes("electronic")||s.includes("إلكترون"))return "إلكترونيات";
+ if(s.includes("beauty")||s.includes("جمال"))return "جمال وعناية شخصية";
+ if(s.includes("home")||s.includes("منزل"))return "منزل ومطبخ";
+ if(s.includes("toys")||s.includes("toy")||s.includes("أطفال"))return "أطفال";
+ if(s.includes("fashion")||s.includes("ملابس"))return "ملابس وأزياء";
+ return "أخرى";
+}
+function parseDukanHtml(html){
+ const doc=new DOMParser().parseFromString(html,"text/html");
+ const out=[],seen=new Set();
+ const links=[...doc.querySelectorAll("a")];
+ for(const a of links){
+   const img=a.querySelector("img")||((a.previousElementSibling&&a.previousElementSibling.tagName==="IMG")?a.previousElementSibling:null);
+   const text=(a.innerText||a.textContent||"").replace(/\s+/g," ").trim();
+   const href=a.href||"";
+   const src=img?.src||img?.getAttribute("src")||"";
+   if(!text||!src)continue;
+   const priceText=text.match(/(?:ج\.م|EGP|جنيه)[^\d]*(\d[\d,]*(?:\.\d+)?)/i)?.[1]||text.match(/\b\d[\d,]*(?:\.\d+)?\b/)?.[0];
+   const price=parsePrice(priceText);
+   if(!price)continue;
+   let name=text.replace(/(?:ج\.م|EGP|جنيه).*$/i,"").replace(/\b\d[\d,]*(?:\.\d+)?\b.*$/,"").trim();
+   if(name.length<3)continue;
+   let category="";
+   const catMatch=text.match(/(?:electronics|General|toys|beauty|home|fashion|إلكترونيات|جمال|أطفال|منزل|ملابس)/i);
+   if(catMatch)category=catMatch[0];
+   const key=(name+"|"+src).toLowerCase();
+   if(seen.has(key))continue;seen.add(key);
+   out.push({name:name.replace(/^["'•\s]+|["'\s]+$/g,"").trim(),category:normalizeCategory(category),price,original_price:null,description:"",sku:"",image_url:src,source_url:href,selected:true});
+ }
+ return out;
+}
+async function fetchUrl(){
+ const url=$("sourceUrl").value.trim();if(!url)throw new Error("اكتب رابط صفحة المنتجات.");
+ $("statusText").textContent="جاري الجلب...";
+ try{
+   const r=await fetch(url,{credentials:"include"});if(!r.ok)throw new Error("HTTP "+r.status);
+   const html=await r.text();products=parseDukanHtml(html);render();
+   if(!products.length)throw new Error("تم فتح الصفحة لكن لم أجد منتجات في HTML.");
+   show("تم العثور على "+products.length+" منتج. راجعهم قبل الاستيراد.",true);
+ }catch(e){
+   $("statusText").textContent="تعذر الجلب المباشر";
+   show("الجلب المباشر لم ينجح: "+e.message+" — استخدم HTML البديل الموجود أسفل الرابط.");
+ }
+}
+function parseInput(){const html=$("htmlInput").value.trim();if(!html){show("الصق HTML صفحة Dukan أولًا.");return}products=parseDukanHtml(html);render();$("statusText").textContent=products.length?"تم التحليل":"لم يتم العثور";if(products.length)show("تم استخراج "+products.length+" منتج. راجع البيانات قبل الاستيراد.",true);else show("لم أجد منتجات في HTML المُلصق. استخدم مصدر الصفحة الكامل.")}
+async function importSelected(){
+ const selected=products.filter(p=>p.selected);if(!selected.length){show("حدد منتجًا واحدًا على الأقل.");return}
+ $("importBtn").disabled=true;$("statusText").textContent="جاري الاستيراد...";
+ let imported=0,skipped=0;
+ try{
+  for(let i=0;i<selected.length;i++){
+   const p=selected[i];$("progressBar").style.width=Math.round((i/selected.length)*100)+"%";$("statusText").textContent="استيراد "+(i+1)+" / "+selected.length;
+   let duplicate=false;
+   if(p.sku){const q=await sb.from("products").select("id").eq("sku",p.sku).limit(1);if(q.error)throw q.error;duplicate=!!q.data?.length}
+   if(!duplicate){const q=await sb.from("products").select("id").eq("name",p.name).limit(1);if(q.error)throw q.error;duplicate=!!q.data?.length}
+   if(duplicate){skipped++;continue}
+   const payload={name:p.name,name_ar:p.name,name_en:p.name,description:p.description||null,description_ar:p.description||null,sku:p.sku||null,category:p.category||"أخرى",price:Number(p.price)||0,original_price:p.original_price?Number(p.original_price):null,image_url:p.image_url||null,country_code:"EG",stock:0,active:true,is_active:true};
+   const ins=await sb.from("products").insert(payload).select("id").single();if(ins.error)throw ins.error;
+   if(p.image_url)await sb.from("product_images").insert({product_id:ins.data.id,image_url:p.image_url,sort_order:0});
+   imported++;
+  }
+  $("progressBar").style.width="100%";$("imported").textContent=imported;$("skipped").textContent=skipped;$("statusText").textContent="اكتمل الاستيراد";show("تم استيراد "+imported+" منتج، وتخطي "+skipped+" منتج مكرر.",true);
+ }catch(e){show("توقف الاستيراد: "+e.message);$("statusText").textContent="حدث خطأ"}
+ finally{$("importBtn").disabled=false}
+}
+async function init(){
+ try{
+  sb=window.ozziGetSupabase();
+  const {data,error}=await sb.auth.getSession();if(error||!data.session){location.href="admin-login.html";return}
+  currentUser=data.session.user;
+  const role=await sb.from("admin_roles").select("role").eq("user_id",currentUser.id).maybeSingle();
+  if(role.error||!role.data||!["admin","manager"].includes(role.data.role)){show("ليس لديك صلاحية الدخول إلى المستورد.");setTimeout(()=>location.href="index.html",1800);return}
+  $("fetchBtn").onclick=fetchUrl;$("parseBtn").onclick=parseInput;$("importBtn").onclick=importSelected;
+  $("selectAll").onclick=()=>{products.forEach(p=>p.selected=true);render()};
+  $("master").onchange=e=>{products.forEach(p=>p.selected=e.target.checked);render()};
+  $("clearBtn").onclick=()=>{products=[];$("htmlInput").value="";render();$("progressBar").style.width="0";$("statusText").textContent="جاهز"};
+  $("mobileBack").onclick=()=>location.href="admin.html";
+  $("logoutBtn").onclick=async()=>{await sb.auth.signOut();location.href="admin-login.html"};
+ }catch(e){show("تعذر تشغيل المستورد: "+e.message)}
+}
+init();
+})();
+</script>
+</body>
+</html>
