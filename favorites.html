@@ -39,13 +39,13 @@ body{background:#f6f8fa}
 <span class="brand-text">OZZI</span>
 <span class="brand-text">MORE THAN STORE</span>
 </a>
-<div class="nav-actions">
+<button class="mobile-menu-toggle" type="button" aria-label="فتح قائمة الموقع" aria-expanded="false" aria-controls="ozziMobileMenu"><span></span><span></span><span></span></button><div class="mobile-menu-panel" id="ozziMobileMenu"><div class="nav-actions">
 <a class="btn btn-outline cart-link cart-icon-btn" href="cart.html" aria-label="السلة" title="السلة">🛒 <span id="cartCount" class="cart-count">0</span></a>
 <a class="btn btn-outline" href="orders.html">📦 طلباتي</a>
 <a class="btn btn-primary" href="favorites.html">❤️ المفضلة</a>
 <a class="btn btn-outline" href="notifications.html">🔔 الإشعارات</a>
 <a class="btn btn-primary" href="profile.html">👤 الملف الشخصي</a>
-</div>
+</div></div>
 </div>
 </header>
 
@@ -165,5 +165,5 @@ grid.innerHTML='<div class="page-state"><div class="state-icon">⚠️</div><str
 document.addEventListener("DOMContentLoaded",init);
 })();
 </script>
-</body>
+<script src="js/mobile-header.js"></script></body>
 </html>
