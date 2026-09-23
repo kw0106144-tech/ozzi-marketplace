@@ -148,10 +148,12 @@ async function createOrder(e){
   // الأعمدة المتاحة حاليًا في جدول orders هي فقط هذه الحقول الأساسية.
   // بيانات التوصيل التفصيلية تظل في رسالة واتساب وبيانات الطلب المحلية،
   // حتى لا يفشل إنشاء الطلب بسبب أعمدة غير موجودة في قاعدة البيانات الحالية.
+  const shippingAddress=[city,address].filter(Boolean).join(" - ");
   const orderPayload={
    user_id:user.id,
    customer_name:name,
    customer_phone:phone,
+   shipping_address:shippingAddress,
    country_code:countryCode,
    payment_method:"cod",
    status:"pending",
