@@ -64,9 +64,10 @@ body{background:#f5f7f8}.checkout-page{padding:30px 0 70px}
 <aside class="box">
 <h2>ملخص الطلب</h2>
 <div id="items"></div>
+<div id="couponBox" style="margin-top:16px;padding:14px;border:1px solid #e9edef;border-radius:14px;background:#fafcfd"><div style="font-weight:900;margin-bottom:8px">🎟️ كود الخصم</div><div style="display:flex;gap:8px"><input id="couponCode" class="field" style="margin:0;flex:1;width:auto" placeholder="أدخل كود الخصم" autocomplete="off"><button id="applyCoupon" type="button" class="btn btn-outline" style="white-space:nowrap">تطبيق</button></div><div id="couponMessage" class="message" style="margin-top:8px"></div></div>
 <div class="summary">
 <div class="sum"><span>قيمة المنتجات</span><strong id="subtotal">0</strong></div>
-<div class="sum"><span>الشحن</span><strong>مجاني</strong></div>
+<div class="sum"><span>الشحن</span><strong>مجاني</strong></div><div id="discountRow" class="sum" style="display:none"><span>الخصم</span><strong id="discount">0</strong></div>
 <div class="sum total"><span>الإجمالي</span><strong id="total">0</strong></div>
 </div>
 </aside>
@@ -82,7 +83,7 @@ body{background:#f5f7f8}.checkout-page{padding:30px 0 70px}
 "use strict";
 const countryNames={EG:"مصر",SA:"السعودية",AE:"الإمارات",IQ:"العراق",OM:"سلطنة عُمان"};
 const symbols={EG:"ج.م",SA:"ر.س",AE:"د.إ",IQ:"ع.ع",OM:"ر.ع"};
-let sb,user,cart=[],countryCode="EG";
+let sb,user,cart=[],countryCode="EG",appliedCoupon=null;
 
 function money(v){return new Intl.NumberFormat("ar-EG").format(Number(v)||0)+" "+(symbols[countryCode]||"ج.م")}
 function setMessage(t,type){const el=document.getElementById("message");el.textContent=t;el.className="message show "+type}
@@ -106,11 +107,37 @@ async function init(){
   document.getElementById("phone").value=user.user_metadata?.phone||"";
 
   renderCart();
+  document.getElementById("applyCoupon").addEventListener("click",applyCoupon);
+  document.getElementById("couponCode").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();applyCoupon()}});
   document.getElementById("checkoutForm").addEventListener("submit",createOrder);
  }catch(e){
   console.error("OZZI CHECKOUT INIT",e);
   document.getElementById("empty").style.display="block";
  }
+}
+
+async function applyCoupon(){
+ const input=document.getElementById("couponCode"), msg=document.getElementById("couponMessage"), code=input.value.trim().toUpperCase();
+ msg.className="message";msg.textContent="";
+ if(!code){msg.textContent="اكتب كود الخصم أولًا.";msg.className="message show error";return}
+ const subtotal=cart.reduce((sum,item)=>sum+(Number(item.price)||0)*Math.max(1,Number(item.quantity)||1),0);
+ try{
+  const now=new Date().toISOString();
+  const {data,error}=await sb.from("coupons").select("id,code,discount_type,discount_value,min_order,country_code,active,starts_at,ends_at").eq("code",code).eq("active",true).maybeSingle();
+  if(error)throw error;
+  if(!data)throw new Error("كود الخصم غير صحيح أو غير فعال.");
+  if(data.country_code&&data.country_code!==countryCode)throw new Error("هذا الكوبون غير متاح لدولتك.");
+  if(data.starts_at&&new Date(data.starts_at)>new Date(now))throw new Error("هذا الكوبون لم يبدأ بعد.");
+  if(data.ends_at&&new Date(data.ends_at)<new Date(now))throw new Error("انتهت صلاحية هذا الكوبون.");
+  if(subtotal<Number(data.min_order||0))throw new Error("الحد الأدنى للطلب لهذا الكوبون هو "+money(data.min_order));
+  let discount=data.discount_type==="percent"?subtotal*(Number(data.discount_value||0)/100):Number(data.discount_value||0);
+  discount=Math.min(subtotal,Math.max(0,discount));
+  appliedCoupon={id:data.id,code:data.code,discount};
+  document.getElementById("discount").textContent="-"+money(discount);
+  document.getElementById("discountRow").style.display="flex";
+  document.getElementById("total").textContent=money(subtotal-discount);
+  msg.textContent="تم تطبيق الكوبون بنجاح ✓";msg.className="message show success";
+ }catch(e){appliedCoupon=null;document.getElementById("discountRow").style.display="none";document.getElementById("total").textContent=money(subtotal);msg.textContent=e.message||"تعذر تطبيق الكوبون.";msg.className="message show error"}
 }
 
 function renderCart(){
@@ -149,6 +176,8 @@ async function createOrder(e){
   // بيانات التوصيل التفصيلية تظل في رسالة واتساب وبيانات الطلب المحلية،
   // حتى لا يفشل إنشاء الطلب بسبب أعمدة غير موجودة في قاعدة البيانات الحالية.
   const shippingAddress=[city,address].filter(Boolean).join(" - ");
+  const discount=appliedCoupon?.discount||0;
+  const finalTotal=Math.max(0,subtotal-discount);
   const orderPayload={
    user_id:user.id,
    customer_name:name,
@@ -158,7 +187,7 @@ async function createOrder(e){
    currency_code:({EG:"EGP",SA:"SAR",AE:"AED",IQ:"IQD",OM:"OMR"})[countryCode]||"EGP",
    payment_method:"cod",
    status:"pending",
-   total:subtotal
+   total:finalTotal
   };
 
   const orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
@@ -177,9 +206,9 @@ async function createOrder(e){
   if(itemsResult.error)throw itemsResult.error;
 
   const lines=cart.map((item,i)=>(i+1)+"- "+(item.name||"منتج")+" × "+Math.max(1,Number(item.quantity)||1)+" = "+money((Number(item.price)||0)*Math.max(1,Number(item.quantity)||1)));
-  const orderText=["طلب جديد من OZZI","","رقم الطلب: #"+order.order_number,"العميل: "+name,"الهاتف: "+phone,alternatePhone?"الهاتف الإضافي: "+alternatePhone:"","الدولة: "+countryNames[countryCode],"المدينة / المحافظة: "+city,"العنوان: "+address,notes?"ملاحظات: "+notes:"","","المنتجات:",...lines,"","قيمة المنتجات: "+money(subtotal),"الشحن: مجاني","الإجمالي النهائي: "+money(subtotal),"طريقة الدفع: الدفع عند الاستلام"].filter(Boolean).join("\n");
+  const orderText=["طلب جديد من OZZI","","رقم الطلب: #"+order.order_number,"العميل: "+name,"الهاتف: "+phone,alternatePhone?"الهاتف الإضافي: "+alternatePhone:"","الدولة: "+countryNames[countryCode],"المدينة / المحافظة: "+city,"العنوان: "+address,notes?"ملاحظات: "+notes:"","","المنتجات:",...lines,"","قيمة المنتجات: "+money(subtotal),appliedCoupon?"كود الخصم: "+appliedCoupon.code:"",appliedCoupon?"قيمة الخصم: -"+money(discount):"","الشحن: مجاني","الإجمالي النهائي: "+money(finalTotal),"طريقة الدفع: الدفع عند الاستلام"].filter(Boolean).join("\n");
 
-  localStorage.setItem("ozzi_last_order",JSON.stringify({id:order.id,order_number:order.order_number,user_id:user.id,customer_name:name,phone,alternatePhone,countryCode,city,address,notes,total:subtotal,subtotal,discount:0,couponCode:"",items:cart,created_at:order.created_at}));
+  localStorage.setItem("ozzi_last_order",JSON.stringify({id:order.id,order_number:order.order_number,user_id:user.id,customer_name:name,phone,alternatePhone,countryCode,city,address,notes,total:subtotal,subtotal,discount,couponCode:appliedCoupon?.code||"",items:cart,created_at:order.created_at}));
   window.ozziCart.clearCart();
   setMessage("تم إنشاء الطلب بنجاح — رقم الطلب #"+order.order_number,"success");
   submit.textContent="تم تأكيد الطلب ✓";
