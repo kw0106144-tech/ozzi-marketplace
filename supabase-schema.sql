@@ -1,4 +1,8 @@
 -- OZZI Marketplace - Orders, admin roles, shipping and products
+-- Live compatibility: some existing databases use customer_phone as the required phone column.
+alter table public.orders add column if not exists customer_phone text;
+update public.orders set customer_phone=phone where customer_phone is null and phone is not null;
+
 create extension if not exists pgcrypto;
 
 create table if not exists public.orders (
