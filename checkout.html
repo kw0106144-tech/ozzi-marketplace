@@ -240,7 +240,7 @@ body{background:#f5f7f8}
     // بيانات الهاتف والعنوان والكوبون تظل موجودة في رسالة واتساب وبيانات الطلب المحلية.
     // لكن لا نرسلها إلى أعمدة غير موجودة في جدول orders.
     const shippingAddress=[city,address].filter(Boolean).join(" - ");
-    const orderPayload={user_id:freshUserId,customer_name:name,customer_phone:phone,shipping_address:shippingAddress,country_code:countryCode,payment_method:"cod",status:"pending",total:finalTotal};
+    const orderPayload={user_id:freshUserId,customer_name:name,customer_phone:phone,shipping_address:shippingAddress,country_code:countryCode,currency_code:currencyCode,payment_method:"cod",status:"pending",total:finalTotal};
    let orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
 
    // في حالة انتهاء الـAccess Token لحظة الضغط على التأكيد، نعمل Refresh مرة ثانية ونحاول مرة واحدة.
