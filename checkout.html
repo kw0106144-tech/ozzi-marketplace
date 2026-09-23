@@ -240,10 +240,13 @@ body{background:#f5f7f8}
     // بيانات الهاتف والعنوان والكوبون تظل موجودة في رسالة واتساب وبيانات الطلب المحلية.
     // لكن لا نرسلها إلى أعمدة غير موجودة في جدول orders.
     // استخدم أعمدة orders الموجودة في قاعدة البيانات الحالية فقط.
+   // shipping_address إجباري في جدول orders الحالي، لذلك نرسله دائمًا بعد التحقق من العنوان.
+   const shippingAddress=[city,address].filter(Boolean).join(" - ");
    const orderPayload={
      user_id:freshUserId,
      customer_name:name,
      customer_phone:phone,
+     shipping_address:shippingAddress,
      country_code:countryCode,
      payment_method:"cod",
      status:"pending",
