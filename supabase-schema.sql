@@ -360,3 +360,26 @@ alter table public.orders alter column country_id drop not null;
 -- Fix live orders payment method constraint
 alter table public.orders drop constraint if exists orders_payment_method_check;
 alter table public.orders add constraint orders_payment_method_check check (payment_method in ('cod'));
+
+
+-- OZZI admin coupon management + safe customer/order deletion
+drop policy if exists "Admins can view all coupons" on public.coupons;
+create policy "Admins can view all coupons" on public.coupons for select to authenticated using (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager')));
+drop policy if exists "Admins can insert coupons" on public.coupons;
+create policy "Admins can insert coupons" on public.coupons for insert to authenticated with check (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager')));
+drop policy if exists "Admins can update coupons" on public.coupons;
+create policy "Admins can update coupons" on public.coupons for update to authenticated using (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager'))) with check (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager')));
+drop policy if exists "Admins can delete coupons" on public.coupons;
+create policy "Admins can delete coupons" on public.coupons for delete to authenticated using (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager')));
+drop policy if exists "Admins can delete orders" on public.orders;
+create policy "Admins can delete orders" on public.orders for delete to authenticated using (exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager')));
+create or replace function public.ozzi_delete_customer(customer_id uuid)
+returns void language plpgsql security definer set search_path = public, auth
+as $$
+begin
+  if not exists(select 1 from public.admin_roles a where a.user_id=auth.uid() and a.role in ('admin','manager')) then raise exception 'not authorized'; end if;
+  delete from auth.users where id=customer_id;
+end;
+$$;
+revoke all on function public.ozzi_delete_customer(uuid) from public;
+grant execute on function public.ozzi_delete_customer(uuid) to authenticated;
