@@ -95,7 +95,7 @@ function normalizeCategory(v){
 function parseDukanHtml(html){
  const doc=new DOMParser().parseFromString(html,"text/html");
  const out=[],seen=new Set();
- const links=[...doc.querySelectorAll("a")];
+ const rows=[...doc.querySelectorAll("table tr")]; rows.forEach(row=>{const img=row.querySelector("img"); const cells=[...row.querySelectorAll("td")]; if(!img||cells.length<2)return; const texts=cells.map(x=>(x.innerText||x.textContent||"").replace(/\\s+/g," ").trim()); const title=texts[0]||""; const price=parsePrice(texts.find(x=>/\\d/.test(x))||""); const cat=(title.match(/electronics|General|toys|beauty|home|fashion/i)||[])[0]||""; const name=cat?title.replace(new RegExp(cat,"i"),""):title; const key=(name+"|"+img.src).toLowerCase(); if(name.length>2&&price&&!seen.has(key)){seen.add(key);out.push({name:name.trim(),category:normalizeCategory(cat),price,original_price:null,description:"",sku:"",image_url:img.src,source_url:row.querySelector("a")?.href||"",selected:true});}}); if(out.length)return out; const links=[...doc.querySelectorAll("a")];
  for(const a of links){
    const img=a.querySelector("img")||((a.previousElementSibling&&a.previousElementSibling.tagName==="IMG")?a.previousElementSibling:null);
    const text=(a.innerText||a.textContent||"").replace(/\s+/g," ").trim();
