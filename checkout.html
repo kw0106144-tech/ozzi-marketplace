@@ -180,7 +180,7 @@ async function createOrder(e){
   // حتى لا يفشل إنشاء الطلب بسبب أعمدة غير موجودة في قاعدة البيانات الحالية.
   const discount=appliedCoupon?.discount||0;
   const finalTotal=Math.max(0,subtotal-discount);
-  const storedNotes=["__OZZI_CITY__:"+city,notes].filter(Boolean).join("\n");
+  const storedNotes=["__OZZI_CITY__:"+city,"__OZZI_ADDRESS__:"+address,notes].filter(Boolean).join("\n");
   const orderPayload={
    user_id:user.id,
    customer_name:name,
