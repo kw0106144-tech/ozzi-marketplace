@@ -217,7 +217,7 @@ body{background:#f5f7f8}
    const name=document.getElementById("fullName").value.trim(),phone=document.getElementById("phone").value.trim(),alternatePhone=document.getElementById("alternatePhone").value.trim(),city=cityEl.value,address=document.getElementById("address").value.trim(),notes=document.getElementById("notes").value.trim();
    if(!name||!phone||!city||!address)throw new Error("من فضلك أكمل الاسم والهاتف والمدينة والعنوان.");
    const finalTotal=Math.max(0,subtotal-discount);
-   const orderPayload={user_id:user.id,customer_name:name,country_code:countryCode,payment_method:"cod",status:"pending",total:finalTotal,shipping_cost:0,coupon_code:appliedCoupon?.code||null,discount_amount:discount,city,phone,alternate_phone:alternatePhone||null,address,notes};
+   const orderPayload={user_id:user.id,customer_name:name,country_code:countryCode,payment_method:"cod",status:"pending",total:finalTotal};
    const orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
    if(orderResult.error)throw orderResult.error;
    const order=orderResult.data;
