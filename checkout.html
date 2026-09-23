@@ -1,340 +1,256 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إتمام الطلب | OZZI</title>
-  <link rel="stylesheet" href="css/style.css">
-  <style>
-    .checkout-page{max-width:1100px;margin:40px auto;padding:0 20px}
-    .checkout-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:24px}
-    .checkout-card{background:#fff;border:1px solid #e8e8e8;border-radius:20px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.05)}
-    .checkout-card h1,.checkout-card h2{margin-top:0}
-    .checkout-form{display:grid;gap:14px}
-    .checkout-form label{font-weight:700}
-    .checkout-form input,.checkout-form textarea,.checkout-form select{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #ddd;border-radius:12px;font:inherit}
-    .checkout-form textarea{min-height:100px;resize:vertical}
-    .checkout-summary-item{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #eee}
-    .checkout-summary-item img{width:58px;height:58px;object-fit:cover;border-radius:10px;background:#f5f5f5}
-    .checkout-summary-item .info{flex:1}
-    .checkout-summary-item .name{font-weight:700}
-    .checkout-summary-item .meta{font-size:13px;color:#777;margin-top:4px}
-    .checkout-subtotal,.checkout-shipping,.checkout-total{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
-    .checkout-shipping{color:#067647;font-weight:700}
-    .checkout-shipping .free-badge{font-size:13px;background:#effcf6;padding:5px 9px;border-radius:8px}
-    .checkout-total{font-size:20px;font-weight:800;padding-top:14px;border-top:1px solid #eee}
-    .checkout-submit{width:100%;margin-top:18px;padding:15px;border:0;border-radius:14px;cursor:pointer;font:inherit;font-weight:800;background:#111;color:#fff}
-    .checkout-submit:disabled{opacity:.6;cursor:not-allowed}
-    .checkout-message{margin-top:14px;padding:12px;border-radius:10px;display:none}
-    .checkout-message.error{display:block;background:#fff1f1;color:#b42318}
-    .checkout-message.success{display:block;background:#effcf6;color:#067647}
-    .empty-checkout{text-align:center;padding:50px 20px}
-    .account-country{padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#f7f7f7;color:#555;font-weight:700}
-    @media(max-width:800px){.checkout-grid{grid-template-columns:1fr}.checkout-page{margin:20px auto}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>إتمام الطلب | OZZI</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/header.css">
+<style>
+body{background:#f5f7f8}
+.checkout-page{padding:30px 0 70px}
+.checkout-wrap{max-width:1120px;margin:auto}
+.checkout-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);gap:22px}
+.checkout-card{background:#fff;border:1px solid #e5e9ec;border-radius:24px;padding:24px;box-shadow:0 14px 40px rgba(7,25,35,.07)}
+.checkout-card h1,.checkout-card h2{margin:0;color:#071923;font-weight:900}
+.checkout-card h1{font-size:28px}.checkout-card h2{font-size:21px}
+.checkout-subtitle{margin:8px 0 22px;color:#7a858b;font-size:13px}
+.checkout-form{display:grid;gap:15px}
+.field{display:grid;gap:7px}
+.field label{font-weight:900;color:#071923;font-size:13px}
+.field input,.field textarea,.field select{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #dce2e6;border-radius:12px;background:#fff;font:inherit;outline:none}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:#08a6d5;box-shadow:0 0 0 3px rgba(8,166,213,.1)}
+.field textarea{min-height:105px;resize:vertical}
+.readonly-country{padding:13px 14px;background:#f5f7f8;border:1px solid #e1e6e9;border-radius:12px;font-weight:900;color:#47545b}
+.checkout-submit{width:100%;border:0;border-radius:14px;padding:15px;background:#071923;color:#fff;font:inherit;font-weight:900;cursor:pointer;margin-top:3px}
+.checkout-submit:disabled{opacity:.55;cursor:not-allowed}
+.checkout-message{display:none;padding:13px;border-radius:12px;font-size:13px;line-height:1.7}
+.checkout-message.error{display:block;background:#fff1f1;color:#b42318}
+.checkout-message.success{display:block;background:#effcf6;color:#067647}
+.summary-items{display:grid;gap:0;margin-top:18px}
+.summary-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #edf0f2}
+.summary-item img{width:62px;height:62px;flex:0 0 62px;object-fit:cover;border-radius:12px;background:#f1f4f5}
+.summary-item-info{min-width:0;flex:1}
+.summary-item-name{font-weight:900;color:#071923;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.summary-item-meta{margin-top:4px;color:#7a858b;font-size:12px}
+.summary-item-total{font-weight:900;color:#071923;white-space:nowrap}
+.summary-row{display:flex;justify-content:space-between;gap:12px;margin-top:16px;color:#536067}
+.summary-row strong{color:#071923}
+.summary-shipping{color:#067647!important}
+.summary-total{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:18px;border-top:1px solid #e8ecee;font-size:19px;font-weight:900;color:#071923}
+.free-badge{display:inline-flex;padding:5px 9px;border-radius:999px;background:#effcf6;color:#067647;font-size:11px;font-weight:900}
+.empty-checkout{text-align:center;padding:70px 20px}
+.empty-checkout p{color:#7a858b;margin:10px 0 22px}
+.security-note{margin-top:15px;padding:12px;border-radius:12px;background:#f7fafb;color:#68757c;font-size:11px;line-height:1.7}
+@media(max-width:850px){.checkout-page{padding:18px 0 45px}.checkout-grid{grid-template-columns:1fr}.checkout-card{padding:18px;border-radius:20px}}
+</style>
 </head>
 <body>
-  <header class="site-header">
-    <div class="container">
-      <nav class="nav">
-        <a class="logo" href="index.html">OZZI</a>
-        <div class="nav-actions">
-          <a class="btn btn-outline" href="cart.html">🛒 السلة</a>
-          <a class="btn btn-primary" href="profile.html">الملف الشخصي</a>
-        </div>
-      </nav>
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href="index.html" aria-label="OZZI">
+      <span class="brand-text">OZZI</span>
+      <span class="brand-text">MORE THAN STORE</span>
+    </a>
+    <div class="nav-actions">
+      <a class="btn btn-outline cart-link cart-icon-btn" href="cart.html" aria-label="السلة" title="السلة">🛒 <span id="cartCount" class="cart-count">0</span></a>
+      <a class="btn btn-outline" href="orders.html" data-auth="account">📦 طلباتي</a>
+      <a class="btn btn-outline" href="favorites.html" data-auth="account">❤️ المفضلة</a>
+      <a class="btn btn-outline" href="notifications.html" data-auth="account">🔔 الإشعارات</a>
+      <a class="btn btn-primary" href="profile.html" data-auth="account">👤 الملف الشخصي</a>
     </div>
-  </header>
+  </div>
+</header>
 
-  <main class="checkout-page">
-    <div id="loadingState" class="checkout-card">جاري تجهيز الطلب...</div>
+<main class="container checkout-page">
+ <div class="checkout-wrap">
+  <div id="loadingState" class="checkout-card">جاري تجهيز الطلب...</div>
 
-    <div id="emptyState" class="checkout-card empty-checkout" style="display:none">
-      <h1>السلة فارغة</h1>
-      <p>أضف منتجات إلى السلة أولًا لإتمام الطلب.</p>
-      <a class="btn btn-primary" href="index.html">العودة للتسوق</a>
-    </div>
+  <div id="emptyState" class="checkout-card empty-checkout" style="display:none">
+   <div style="font-size:48px">🛒</div>
+   <h1>السلة فارغة</h1>
+   <p>أضف منتجات إلى السلة أولًا لإتمام الطلب.</p>
+   <a class="btn btn-primary" href="index.html">العودة للتسوق</a>
+  </div>
 
-    <div id="checkoutContent" style="display:none">
-      <div class="checkout-grid">
-        <section class="checkout-card">
-          <h1>إتمام الطلب</h1>
-          <p>بيانات التوصيل</p>
-          <form id="checkoutForm" class="checkout-form">
-            <div>
-              <label for="fullName">الاسم بالكامل</label>
-              <input id="fullName" required>
-            </div>
-            <div>
-              <label for="phone">رقم الهاتف</label>
-              <input id="phone" type="tel" required>
-            </div>
-            <div>
-              <label>الدولة</label>
-              <div id="accountCountry" class="account-country" aria-live="polite">جاري تحديد الدولة...</div>
-            </div>
-            <div>
-              <label for="address">العنوان بالتفصيل</label>
-              <textarea id="address" placeholder="المحافظة، المنطقة، الشارع، رقم المبنى..." required></textarea>
-            </div>
-            <div>
-              <label for="notes">ملاحظات إضافية</label>
-              <textarea id="notes" placeholder="أي ملاحظات خاصة بالطلب (اختياري)"></textarea>
-            </div>
-            <div>
-              <label for="payment">طريقة الدفع</label>
-              <select id="payment" required>
-                <option value="cod">الدفع عند الاستلام</option>
-              </select>
-            </div>
-            <button id="submitOrder" class="checkout-submit" type="submit">تأكيد الطلب</button>
-            <div id="checkoutMessage" class="checkout-message"></div>
-          </form>
-        </section>
+  <div id="checkoutContent" style="display:none">
+   <div class="checkout-grid">
+    <section class="checkout-card">
+     <h1>إتمام الطلب</h1>
+     <p class="checkout-subtitle">أدخل بيانات التوصيل وأكّد طلبك.</p>
+     <form id="checkoutForm" class="checkout-form">
+      <div class="field"><label for="fullName">الاسم بالكامل</label><input id="fullName" autocomplete="name" required></div>
+      <div class="field"><label for="phone">رقم الهاتف</label><input id="phone" type="tel" autocomplete="tel" required></div>
+      <div class="field"><label>الدولة</label><div id="accountCountry" class="readonly-country">جاري تحديد الدولة...</div></div>
+      <div class="field"><label for="address">العنوان بالتفصيل</label><textarea id="address" placeholder="المحافظة، المنطقة، الشارع، رقم المبنى..." required></textarea></div>
+      <div class="field"><label for="notes">ملاحظات إضافية</label><textarea id="notes" placeholder="أي ملاحظات خاصة بالطلب (اختياري)"></textarea></div>
+      <div class="field"><label for="payment">طريقة الدفع</label><select id="payment"><option value="cod">الدفع عند الاستلام</option></select></div>
+      <button id="submitOrder" class="checkout-submit" type="submit">تأكيد الطلب</button>
+      <div id="checkoutMessage" class="checkout-message"></div>
+     </form>
+     <div class="security-note">سيتم حفظ الطلب في حسابك، وبعد التأكيد سيتم فتح واتساب لإرسال تفاصيل الطلب.</div>
+    </section>
 
-        <aside class="checkout-card">
-          <h2>ملخص الطلب</h2>
-          <div id="summaryItems"></div>
+    <aside class="checkout-card">
+     <h2>ملخص الطلب</h2>
+     <div id="summaryItems" class="summary-items"></div>
+     <div class="summary-row"><span>قيمة المنتجات</span><strong id="summarySubtotal">0</strong></div>
+     <div class="summary-row summary-shipping"><span>الشحن</span><span class="free-badge">مجاني</span></div>
+     <div class="summary-total"><span>الإجمالي النهائي</span><span id="summaryTotal">0</span></div>
+    </aside>
+   </div>
+  </div>
+ </div>
+</main>
 
-          <div class="checkout-subtotal">
-            <span>قيمة المنتجات</span>
-            <strong id="summarySubtotal">0 ج.م</strong>
-          </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/cart.js"></script>
+<script>
+(function(){
+ "use strict";
+ const countries={EG:"مصر",SA:"السعودية",AE:"الإمارات",IQ:"العراق",OM:"سلطنة عُمان"};
+ const symbols={EG:"ج.م",SA:"ر.س",AE:"د.إ",IQ:"ع.ع",OM:"ر.ع"};
+ const loading=document.getElementById("loadingState");
+ const empty=document.getElementById("emptyState");
+ const content=document.getElementById("checkoutContent");
+ const form=document.getElementById("checkoutForm");
+ const submit=document.getElementById("submitOrder");
+ const message=document.getElementById("checkoutMessage");
+ const itemsBox=document.getElementById("summaryItems");
+ const subtotalBox=document.getElementById("summarySubtotal");
+ const totalBox=document.getElementById("summaryTotal");
+ let sb=null,user=null,countryCode="",countryName="",cart=[],subtotal=0;
 
-          <div class="checkout-shipping">
-            <span>الشحن</span>
-            <span class="free-badge">مجاني لفترة محدودة</span>
-          </div>
+ function money(v){return new Intl.NumberFormat("ar-EG").format(Math.round(Number(v)||0))+" "+(symbols[countryCode]||"ج.م")}
+ function setMessage(t,type){message.className="checkout-message "+type;message.textContent=t}
+ function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+ function validItem(item){
+   return item && item.id && Number(item.price)>0 && Number(item.quantity)>0;
+ }
+ async function init(){
+  try{
+   sb=window.ozziGetSupabase();
+   const sessionResult=await sb.auth.getSession();
+   if(!sessionResult.data.session){window.location.replace("login.html?next=checkout.html");return}
+   user=sessionResult.data.session.user;
+   const meta=user.user_metadata||{};
+   countryCode=String(meta.country_code||localStorage.getItem("ozzi_country")||"EG").toUpperCase();
+   countryName=countries[countryCode];
+   if(!countryName) throw new Error("الدولة المرتبطة بالحساب غير صالحة.");
+   document.getElementById("fullName").value=meta.full_name||"";
+   document.getElementById("phone").value=meta.phone||"";
+   document.getElementById("accountCountry").textContent=countryName;
 
-          <div class="checkout-total">
-            <span>الإجمالي النهائي</span>
-            <span id="summaryTotal">0 ج.م</span>
-          </div>
-        </aside>
-      </div>
-    </div>
-  </main>
+   cart=window.ozziCart.getCart().filter(validItem);
+   if(!cart.length){loading.style.display="none";empty.style.display="block";return}
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/cart.js"></script>
-  <script>
-    (async function () {
-      const loading = document.getElementById("loadingState");
-      const empty = document.getElementById("emptyState");
-      const content = document.getElementById("checkoutContent");
-      const itemsBox = document.getElementById("summaryItems");
-      const subtotalBox = document.getElementById("summarySubtotal");
-      const totalBox = document.getElementById("summaryTotal");
-      const form = document.getElementById("checkoutForm");
-      const message = document.getElementById("checkoutMessage");
-      const submit = document.getElementById("submitOrder");
-      const accountCountry = document.getElementById("accountCountry");
+   // لا نعتمد على نص السعر الموجود في الكارت؛ السعر الرقمي محفوظ في ozzi_cart.
+   subtotal=cart.reduce((sum,item)=>sum+(Number(item.price)*Number(item.quantity)),0);
+   itemsBox.innerHTML=cart.map(item=>{
+    const image=esc(item.image||"");
+    const name=esc(item.name||"منتج");
+    const qty=Number(item.quantity);
+    const price=Number(item.price);
+    return '<div class="summary-item"><img src="'+image+'" alt=""><div class="summary-item-info"><div class="summary-item-name">'+name+'</div><div class="summary-item-meta">'+qty+' × '+money(price)+'</div></div><div class="summary-item-total">'+money(price*qty)+'</div></div>';
+   }).join("");
+   subtotalBox.textContent=money(subtotal);
+   totalBox.textContent=money(subtotal);
 
-      const countries = {
-        EG: "مصر",
-        SA: "السعودية",
-        AE: "الإمارات",
-        IQ: "العراق",
-        OM: "سلطنة عُمان"
-      };
+   loading.style.display="none";
+   content.style.display="block";
 
-      const shippingCost = 0;
+   form.addEventListener("submit",submitOrder);
+  }catch(e){
+   console.error("OZZI CHECKOUT INIT:",e);
+   loading.textContent="تعذر تجهيز صفحة إتمام الطلب. حاول تحديث الصفحة.";
+  }
+ }
 
-      const currencySymbols = {EG:"ج.م",SA:"ر.س",AE:"د.إ",IQ:"ع.ع",OM:"ر.ع"};
-      function money(value) {
-        return new Intl.NumberFormat("ar-EG").format(Math.round(Number(value)||0)) + " " + (currencySymbols[countryCode] || "ج.م");
-      }
+ async function submitOrder(event){
+  event.preventDefault();
+  if(submit.disabled)return;
+  setMessage("","");submit.disabled=true;submit.textContent="جاري إنشاء الطلب...";
 
-      function setMessage(text, type) {
-        message.className = "checkout-message " + type;
-        message.textContent = text;
-      }
+  try{
+   const name=document.getElementById("fullName").value.trim();
+   const phone=document.getElementById("phone").value.trim();
+   const address=document.getElementById("address").value.trim();
+   const notes=document.getElementById("notes").value.trim();
+   if(!name||!phone||!address)throw new Error("من فضلك أكمل بيانات التوصيل.");
 
-      try {
-        const sb = window.ozziGetSupabase();
-        const { data, error } = await sb.auth.getSession();
+   // نستخدم فقط الأعمدة الموجودة في قاعدة البيانات الحالية للطلب.
+   // تفاصيل العنوان والهاتف تبقى في رسالة واتساب حتى لا يفشل إنشاء الطلب بسبب أعمدة قديمة غير موجودة.
+   const orderPayload={
+    user_id:user.id,
+    customer_name:name,
+    country_code:countryCode,
+    payment_method:"cod",
+    status:"pending",
+    total:subtotal
+   };
 
-        if (error || !data.session) {
-          window.location.replace("login.html?next=checkout.html");
-          return;
-        }
+   const orderResult=await sb.from("orders").insert(orderPayload).select("id,order_number,created_at").single();
+   if(orderResult.error)throw orderResult.error;
+   const order=orderResult.data;
+   if(!order)throw new Error("تعذر إنشاء الطلب.");
 
-        const user = data.session.user;
-        const meta = user.user_metadata || {};
-        const countryCode = String(meta.country_code || "").toUpperCase();
-        const countryName = countries[countryCode];
+   const orderItems=cart.map(item=>({
+    order_id:order.id,
+    product_id:String(item.id),
+    product_name:item.name||"منتج",
+    unit_price:Number(item.price),
+    quantity:Number(item.quantity)
+   }));
 
-        if (!countryName) {
-          throw new Error("لا توجد دولة مرتبطة بهذا الحساب. يرجى تحديث بيانات الحساب.");
-        }
+   const itemsResult=await sb.from("order_items").insert(orderItems);
+   if(itemsResult.error)throw itemsResult.error;
 
-        document.getElementById("fullName").value = meta.full_name || "";
-        document.getElementById("phone").value = meta.phone || "";
-        accountCountry.textContent = countryName;
+   const lines=cart.map((item,i)=>
+    (i+1)+"- "+(item.name||"منتج")+" × "+Number(item.quantity)+" = "+money(Number(item.price)*Number(item.quantity))
+   );
 
-        const cart = window.ozziCart.getCart();
+   const orderText=[
+    "طلب جديد من OZZI",
+    "",
+    "رقم الطلب: #"+order.order_number,
+    "العميل: "+name,
+    "الهاتف: "+phone,
+    "الدولة: "+countryName,
+    "العنوان: "+address,
+    notes?"ملاحظات: "+notes:"",
+    "",
+    "المنتجات:",
+    ...lines,
+    "",
+    "قيمة المنتجات: "+money(subtotal),
+    "الشحن: مجاني",
+    "الإجمالي النهائي: "+money(subtotal),
+    "طريقة الدفع: الدفع عند الاستلام"
+   ].filter(Boolean).join("\n");
 
-        if (!cart.length) {
-          loading.style.display = "none";
-          empty.style.display = "block";
-          return;
-        }
+   localStorage.setItem("ozzi_last_order",JSON.stringify({
+    id:order.id,order_number:order.order_number,user_id:user.id,customer_name:name,
+    phone,country_code:countryCode,address,notes,total:subtotal,items:cart,created_at:order.created_at
+   }));
+   window.ozziCart.clearCart();
 
-        let subtotal = 0;
+   setMessage("تم إنشاء الطلب بنجاح — رقم الطلب #"+order.order_number,"success");
+   submit.textContent="تم تأكيد الطلب ✓";
 
-        itemsBox.innerHTML = cart.map(item => {
-          const price = Number(item.price || 0);
-          const qty = Number(item.quantity || 1);
-          subtotal += price * qty;
+   const wa="https://wa.me/201013532567?text="+encodeURIComponent(orderText);
+   window.open(wa,"_blank");
 
-          return `
-            <div class="checkout-summary-item">
-              <img src="${item.image || ""}" alt="">
-              <div class="info">
-                <div class="name">${item.name || "منتج"}</div>
-                <div class="meta">${qty} × ${money(price)}</div>
-              </div>
-              <strong>${money(price * qty)}</strong>
-            </div>
-          `;
-        }).join("");
-
-        const total = subtotal + shippingCost;
-
-        subtotalBox.textContent = money(subtotal);
-        totalBox.textContent = money(total);
-        loading.style.display = "none";
-        content.style.display = "block";
-
-        form.addEventListener("submit", async function (event) {
-          event.preventDefault();
-
-          message.className = "checkout-message";
-          message.textContent = "";
-          submit.disabled = true;
-          submit.textContent = "جاري حفظ الطلب...";
-
-          try {
-            const name = document.getElementById("fullName").value.trim();
-            const phone = document.getElementById("phone").value.trim();
-            const address = document.getElementById("address").value.trim();
-            const notes = document.getElementById("notes").value.trim();
-            const paymentMethod = document.getElementById("payment").value;
-
-            if (!name || !phone || !address) {
-              throw new Error("من فضلك أكمل بيانات التوصيل.");
-            }
-
-            const orderPayload = {
-              user_id: user.id,
-              customer_name: name,
-              phone,
-              country_code: countryCode,
-              address,
-              notes: notes || null,
-              payment_method: paymentMethod,
-              status: "pending",
-              total
-            };
-
-            const { data: order, error: orderError } = await sb
-              .from("orders")
-              .insert(orderPayload)
-              .select("id, order_number")
-              .single();
-
-            if (orderError) throw orderError;
-            if (!order) throw new Error("تعذر إنشاء الطلب.");
-
-            const orderItems = cart.map(item => ({
-              order_id: order.id,
-              product_id: String(item.id),
-              product_name: item.name || "منتج",
-              product_image: item.image || null,
-              unit_price: Number(item.price || 0),
-              quantity: Number(item.quantity || 1)
-            }));
-
-            const { error: itemsError } = await sb
-              .from("order_items")
-              .insert(orderItems);
-
-            if (itemsError) throw itemsError;
-
-            const lines = cart.map((item, index) =>
-              (index + 1) + "- " + (item.name || "منتج") + " × " +
-              Number(item.quantity || 1) + " = " +
-              money(Number(item.price || 0) * Number(item.quantity || 1))
-            );
-
-            const orderText =
-              "طلب جديد من OZZI\n\n" +
-              "رقم الطلب: #" + order.order_number + "\n" +
-              "العميل: " + name + "\n" +
-              "الهاتف: " + phone + "\n" +
-              "الدولة: " + countryName + "\n" +
-              "العنوان: " + address + "\n" +
-              (notes ? "ملاحظات: " + notes + "\n" : "") +
-              "\nالمنتجات:\n" + lines.join("\n") +
-              "\n\nقيمة المنتجات: " + money(subtotal) +
-              "\nالشحن: مجاني لفترة محدودة" +
-              "\nالإجمالي النهائي: " + money(total) +
-              "\nطريقة الدفع: الدفع عند الاستلام";
-
-            localStorage.setItem("ozzi_last_order", JSON.stringify({
-              id: order.id,
-              order_number: order.order_number,
-              user_id: user.id,
-              customer_name: name,
-              phone,
-              country_code: countryCode,
-              address,
-              notes,
-              subtotal,
-              shipping_cost: shippingCost,
-              total,
-              items: cart,
-              created_at: new Date().toISOString()
-            }));
-
-            window.ozziCart.clearCart();
-
-            setMessage(
-              "تم حفظ الطلب بنجاح. رقم الطلب: #" + order.order_number +
-              " — سيتم تحويلك إلى واتساب لتأكيده.",
-              "success"
-            );
-
-            submit.textContent = "تم حفظ الطلب ✓";
-
-            const whatsappUrl =
-              "https://wa.me/201013532567?text=" +
-              encodeURIComponent(orderText);
-
-            window.open(whatsappUrl, "_blank");
-
-            setTimeout(function () {
-              window.location.replace("index.html?order=success&order_number=" + encodeURIComponent(order.order_number));
-            }, 1200);
-
-          } catch (err) {
-            console.error("OZZI ORDER ERROR:", err);
-            setMessage(
-              err.message || "حدث خطأ أثناء حفظ الطلب. حاول مرة أخرى.",
-              "error"
-            );
-            submit.disabled = false;
-            submit.textContent = "تأكيد الطلب";
-          }
-        });
-
-      } catch (err) {
-        console.error("OZZI CHECKOUT ERROR:", err);
-        loading.textContent = "حدث خطأ أثناء تجهيز صفحة الطلب. حاول مرة أخرى.";
-      }
-    })();
-  </script>
+   setTimeout(()=>window.location.replace("orders.html"),1200);
+  }catch(e){
+   console.error("OZZI CHECKOUT ORDER:",e);
+   setMessage(e.message||"حدث خطأ أثناء إنشاء الطلب. حاول مرة أخرى.","error");
+   submit.disabled=false;submit.textContent="تأكيد الطلب";
+  }
+ }
+ document.addEventListener("DOMContentLoaded",init);
+})();
+</script>
 </body>
 </html>
